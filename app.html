@@ -729,13 +729,17 @@ function closeDet(){document.getElementById('m-det').style.display='none';detId=
 async function eliminarTicket(id){
   const t=tickets.find(x=>x.id===id);
   if(!t)return;
-  if(t.estado!=='resolvido'&&t.estado!=='fechado'){toast('Só podes eliminar tarefas resolvidas ou fechadas.','error');return}
   if(!confirm('Tens a certeza que queres ELIMINAR esta tarefa permanentemente?\n\n"'+t.titulo+'"\n\nEsta ação não pode ser desfeita.'))return;
-  await SB.from('mensagens_ticket').delete().eq('ticket_id',id);
-  const{error}=await SB.from('tickets').delete().eq('id',id);
-  if(error){toast('Erro ao eliminar: '+error.message,'error');return}
-  closeDet();await loadAll();renderStats();renderTickets();
-  toast('Tarefa eliminada com sucesso.','success');
+  try{
+    const{error:e1}=await SB.from('mensagens_ticket').delete().eq('ticket_id',id);
+    if(e1)console.warn('Aviso ao apagar mensagens:',e1.message);
+    const{error:e2}=await SB.from('tickets').delete().eq('id',id);
+    if(e2){toast('Erro ao eliminar tarefa: '+e2.message,'error');return;}
+    closeDet();
+    tickets=tickets.filter(x=>x.id!==id);
+    renderStats();renderTickets();
+    toast('Tarefa eliminada com sucesso!','success');
+  }catch(e){toast('Erro inesperado: '+e.message,'error');}
 }
 function closeNovo(){document.getElementById('m-novo').style.display='none'}
 async function logout(){await SB.auth.signOut();location.href='index.html'}

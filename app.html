@@ -7,125 +7,125 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--blue:#185FA5;--bl:#E6F1FB;--bd:#0C447C;--bor:#e2e8f0;--bg:#f8fafc;--bg2:#f1f5f9;--t:#0f172a;--t2:#64748b;--t3:#94a3b8;--r:10px;--rl:14px}
+:root{--blue:#185FA5;--bl:#dbeafe;--bd:#1e40af;--bor:#e2e8f0;--bg:#f8fafc;--bg2:#f1f5f9;--t:#0f172a;--t2:#64748b;--t3:#94a3b8;--r:10px;--rl:14px}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--t);font-size:14px}
 .app{display:flex;min-height:100vh}
-.sb{width:230px;background:#0C447C;display:flex;flex-direction:column;flex-shrink:0}
-.sb-logo{display:flex;align-items:center;gap:10px;padding:18px 16px;border-bottom:1px solid rgba(255,255,255,.1)}
-.logo-mark{width:38px;height:38px;background:#fff;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#0C447C;font-weight:900;font-size:13px;flex-shrink:0}
+/* SIDEBAR */
+.sb{width:220px;background:#0C447C;display:flex;flex-direction:column;flex-shrink:0;position:sticky;top:0;height:100vh}
+.sb-logo{display:flex;align-items:center;gap:10px;padding:18px 14px;border-bottom:1px solid rgba(255,255,255,.12)}
+.lm{width:36px;height:36px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#0C447C;font-weight:900;font-size:12px;flex-shrink:0}
 .sb-name{font-size:14px;font-weight:700;color:#fff}
-.sb-role{font-size:11px;color:rgba(255,255,255,.6)}
-.sb-nav{flex:1;padding:10px 8px;display:flex;flex-direction:column;gap:2px}
-.ni{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:var(--r);color:rgba(255,255,255,.7);text-decoration:none;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;border:none;background:none;width:100%;text-align:left}
-.ni:hover,.ni.active{background:rgba(255,255,255,.15);color:#fff}
-.ni-icon{font-size:15px;width:18px;text-align:center}
+.sb-sub{font-size:11px;color:rgba(255,255,255,.55)}
+.sb-nav{flex:1;padding:10px 8px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+.ni{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:var(--r);color:rgba(255,255,255,.65);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;border:none;background:none;width:100%;text-align:left}
+.ni:hover,.ni.active{background:rgba(255,255,255,.14);color:#fff}
+.ni svg{width:16px;height:16px;flex-shrink:0;opacity:.8}
+.ni.active svg{opacity:1}
 .nb{background:#ef4444;color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:auto;display:none}
-.sb-sep{height:1px;background:rgba(255,255,255,.1);margin:8px 8px}
-.sb-foot{padding:12px;border-top:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:8px}
+.sb-sep{height:1px;background:rgba(255,255,255,.1);margin:6px 10px}
+.sb-foot{padding:12px;border-top:1px solid rgba(255,255,255,.12);display:flex;align-items:center;gap:8px}
 .u-info{flex:1;min-width:0}
 .u-name{font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.u-cargo{font-size:11px;color:rgba(255,255,255,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.btn-out{background:rgba(255,255,255,.1);border:none;border-radius:8px;width:30px;height:30px;cursor:pointer;color:rgba(255,255,255,.7);font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.u-cargo{font-size:11px;color:rgba(255,255,255,.55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn-out{background:rgba(255,255,255,.1);border:none;border-radius:7px;width:28px;height:28px;cursor:pointer;color:rgba(255,255,255,.6);font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
 .btn-out:hover{background:rgba(239,68,68,.3);color:#fca5a5}
-.main{flex:1;overflow-y:auto;background:var(--bg)}
-.sec{display:none;padding:24px;max-width:920px}
+/* MAIN */
+.main{flex:1;overflow-y:auto;min-width:0}
+.sec{display:none;padding:22px;max-width:900px}
 .sec.active{display:block}
-.sec-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap}
-.sec-hdr h1{font-size:20px;font-weight:700;color:var(--t)}
+.sec-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;gap:12px;flex-wrap:wrap}
+.sec-hdr h1{font-size:19px;font-weight:700;color:var(--t)}
 .sec-desc{font-size:13px;color:var(--t2);margin-top:2px}
 /* STATS */
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
-.sc{background:#fff;border:1px solid var(--bor);border-radius:var(--rl);padding:16px}
-.sl{font-size:12px;color:var(--t2);margin-bottom:4px;font-weight:500}
-.sv{font-size:28px;font-weight:800;color:var(--t)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+.sc{background:#fff;border:1px solid var(--bor);border-radius:var(--rl);padding:14px 16px}
+.sl{font-size:12px;color:var(--t2);margin-bottom:3px;font-weight:500}
+.sv{font-size:26px;font-weight:800;color:var(--t)}
 .sv.danger{color:#dc2626}.sv.warn{color:#d97706}.sv.ok{color:#16a34a}
 /* FILTERS */
-.fbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
-.filters{display:flex;gap:6px;flex-wrap:wrap;flex:1}
-.fb{padding:5px 13px;border-radius:20px;border:1px solid var(--bor);background:#fff;font-size:12px;cursor:pointer;color:var(--t2);font-weight:500;transition:all .15s}
+.fbar{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.filters{display:flex;gap:5px;flex-wrap:wrap;flex:1}
+.fb{padding:5px 12px;border-radius:20px;border:1px solid var(--bor);background:#fff;font-size:12px;cursor:pointer;color:var(--t2);font-weight:500;transition:all .15s}
 .fb:hover{border-color:var(--blue);color:var(--blue)}
 .fb.active{background:var(--bl);color:var(--bd);border-color:#93c5fd}
-.srch{padding:8px 12px;border:1px solid var(--bor);border-radius:var(--r);font-size:13px;width:180px;background:#fff;color:var(--t)}
+.srch{padding:7px 12px;border:1px solid var(--bor);border-radius:var(--r);font-size:13px;width:170px;background:#fff;color:var(--t)}
 /* TICKETS */
 .tc{background:#fff;border:1px solid var(--bor);border-radius:var(--rl);padding:14px 16px;cursor:pointer;transition:all .15s;margin-bottom:8px}
-.tc:hover{border-color:var(--blue);box-shadow:0 2px 12px rgba(24,95,165,.1)}
-.tc-urg{border-left:4px solid #dc2626}
-.tc-alto{border-left:4px solid #d97706}
+.tc:hover{border-color:var(--blue);box-shadow:0 2px 10px rgba(24,95,165,.08)}
+.tc-urg{border-left:3px solid #dc2626}
+.tc-alto{border-left:3px solid #d97706}
 .tt{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-.ti{flex:1}
+.ti{flex:1;min-width:0}
 .tit{font-size:14px;font-weight:600;color:var(--t);margin-bottom:3px}
-.tdesc{font-size:12px;color:var(--t2);line-height:1.4}
-.tmeta{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap}
-.tdate{font-size:11px;color:var(--t3);white-space:nowrap}
+.tdesc{font-size:12px;color:var(--t2);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tmeta{display:flex;align-items:center;gap:5px;margin-top:7px;flex-wrap:wrap}
+.tdate{font-size:11px;color:var(--t3);white-space:nowrap;flex-shrink:0}
 /* BADGES */
-.badge{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.badge{padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
 .b-urgente{background:#fef2f2;color:#991b1b}
 .b-alto{background:#fffbeb;color:#92400e}
 .b-medio{background:#eff6ff;color:#1e40af}
 .b-baixo{background:#f0fdf4;color:#166534}
 .b-aberto{background:#fffbeb;color:#92400e}
-.b-em-curso{background:#eff6ff;color:#1e40af}
-.b-resolvido{background:#f0fdf4;color:#166534}
-.b-fechado{background:#f8fafc;color:#64748b;border:1px solid var(--bor)}
+.b-em-curso{background:#dbeafe;color:#1e40af}
+.b-resolvido{background:#dcfce7;color:#166534}
+.b-fechado{background:#f1f5f9;color:#64748b}
 .b-cat{background:var(--bg2);color:var(--t2);border:1px solid var(--bor)}
-.b-dep{background:#fdf4ff;color:#7e22ce;border:1px solid #e9d5ff}
+.b-dep{background:#f3e8ff;color:#6b21a8}
 /* AVATARS */
-.av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
-.av-sm{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
-.av-lg{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0}
+.av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.av-sm{width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
+.av-lg{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
 .av-row{display:flex;align-items:center;gap:8px;margin-top:4px}
 .mn{font-size:11px;color:var(--t2)}
 /* FORMS */
-.fg{margin-bottom:14px}
-.fl{display:block;font-size:12px;font-weight:600;color:var(--t2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+.fg{margin-bottom:13px}
+.fl{display:block;font-size:11px;font-weight:700;color:var(--t2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em}
 input,select,textarea{width:100%;padding:9px 12px;border:1.5px solid var(--bor);border-radius:var(--r);font-size:13px;background:#fff;color:var(--t);font-family:inherit;transition:border-color .15s}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(24,95,165,.1)}
 textarea{resize:vertical;min-height:80px;line-height:1.5}
 .frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.frow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 /* BUTTONS */
-.bp{padding:9px 18px;background:var(--blue);color:#fff;border:none;border-radius:var(--r);font-size:13px;cursor:pointer;font-weight:600;transition:background .15s;white-space:nowrap}
-.bp:hover{background:var(--bd)}
-.bp-danger{background:#dc2626}.bp-danger:hover{background:#991b1b}
+.bp{padding:9px 16px;background:var(--blue);color:#fff;border:none;border-radius:var(--r);font-size:13px;cursor:pointer;font-weight:600;transition:background .15s;white-space:nowrap}
+.bp:hover{background:#0C447C}
+.bp-sm{padding:6px 12px;font-size:12px}
 .bp-green{background:#16a34a}.bp-green:hover{background:#15803d}
-.bs{padding:9px 18px;background:transparent;border:1.5px solid var(--bor);border-radius:var(--r);font-size:13px;cursor:pointer;color:var(--t);font-weight:500}
+.bs{padding:9px 16px;background:transparent;border:1.5px solid var(--bor);border-radius:var(--r);font-size:13px;cursor:pointer;color:var(--t);font-weight:500}
 .bs:hover{background:var(--bg2)}
-.btn-row{display:flex;gap:8px;flex-wrap:wrap}
 /* MODAL */
-.mo{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
-.modal{background:#fff;border-radius:var(--rl);border:1px solid var(--bor);width:100%;max-width:520px;max-height:92vh;overflow-y:auto}
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+.modal{background:#fff;border-radius:var(--rl);width:100%;max-width:520px;max-height:92vh;overflow-y:auto;display:flex;flex-direction:column}
 .modal-lg{max-width:640px}
 .mh{padding:16px 20px;border-bottom:1px solid var(--bor);display:flex;justify-content:space-between;align-items:center;gap:12px;position:sticky;top:0;background:#fff;z-index:1}
-.mh h2{font-size:16px;font-weight:700}
-.mc-btn{background:none;border:none;font-size:22px;cursor:pointer;color:var(--t2);padding:2px 6px;border-radius:6px;line-height:1}
-.mc-btn:hover{background:var(--bg2)}
-.mb{padding:20px}
+.mh h2{font-size:15px;font-weight:700;color:var(--t)}
+.mc{background:none;border:none;font-size:22px;cursor:pointer;color:var(--t2);padding:2px 6px;border-radius:6px;line-height:1}
+.mc:hover{background:var(--bg2)}
+.mb{padding:20px;flex:1}
 .mf{padding:14px 20px;border-top:1px solid var(--bor);display:flex;justify-content:flex-end;gap:8px;position:sticky;bottom:0;background:#fff}
 /* DETAIL */
-.df{margin-bottom:14px}
-.dl{font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.df{margin-bottom:12px}
+.dl{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
 .dv{font-size:14px;color:var(--t);line-height:1.5}
 .dsub{font-size:12px;color:var(--t2)}
-.drow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
-.ebtns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;margin-top:6px}
-.br{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
-/* MESSAGES */
-.ml{display:flex;flex-direction:column;gap:8px;max-height:220px;overflow-y:auto;padding:2px;margin-bottom:10px}
+.drow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.ebtns{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 12px}
+.br{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+/* MSGS */
+.ml{display:flex;flex-direction:column;gap:7px;max-height:200px;overflow-y:auto;margin-bottom:10px}
 .mi{background:var(--bg2);border-radius:var(--r);padding:10px 12px}
-.mtop{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.mtop{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
 .ma{font-size:12px;font-weight:600;color:var(--t)}
 .md{font-size:11px;color:var(--t3)}
 .mt{font-size:13px;color:var(--t2);line-height:1.5}
-.me{font-size:13px;color:var(--t3);padding:8px 0}
 .cir{display:flex;gap:8px}
 .cir input{flex:1}
 /* CHAT */
-.chat{background:#fff;border:1px solid var(--bor);border-radius:var(--rl);overflow:hidden;max-width:720px}
-.chat-msgs{padding:16px;display:flex;flex-direction:column;gap:10px;min-height:300px;max-height:500px;overflow-y:auto}
+.chat{background:#fff;border:1px solid var(--bor);border-radius:var(--rl);overflow:hidden;max-width:700px}
+.chat-msgs{padding:16px;display:flex;flex-direction:column;gap:10px;min-height:280px;max-height:460px;overflow-y:auto}
 .cm{display:flex;align-items:flex-end;gap:8px}
 .cm-me{flex-direction:row-reverse}
-.cb{background:var(--bg2);border-radius:12px 12px 12px 3px;padding:10px 14px;max-width:75%}
-.cb-me{background:var(--bl);border-radius:12px 12px 3px 12px}
+.cb{background:var(--bg2);border-radius:12px 12px 12px 3px;padding:9px 13px;max-width:75%}
+.cb-me{background:#dbeafe;border-radius:12px 12px 3px 12px}
 .ca{font-size:11px;font-weight:600;color:var(--blue);margin-bottom:2px}
 .ct{font-size:13px;color:var(--t);line-height:1.5}
 .ctime{font-size:10px;color:var(--t3);margin-top:3px;text-align:right}
@@ -133,77 +133,82 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
 .ci-row input{flex:1}
 /* TEAM */
 .tgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-.tkc{background:#fff;border:1px solid var(--bor);border-radius:var(--rl);padding:16px;transition:box-shadow .15s}
-.tkc:hover{box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.tkc{background:#fff;border:1px solid var(--bor);border-radius:var(--rl);padding:15px}
 .tkc-top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .tn{font-size:14px;font-weight:600;color:var(--t)}
 .tro{font-size:12px;color:var(--t2)}
 .tks{display:flex;gap:8px}
 .tks-i{flex:1;text-align:center;background:var(--bg2);border-radius:8px;padding:8px 4px}
-.tsn{font-size:20px;font-weight:700}
+.tsn{font-size:19px;font-weight:700}
 .tsl{font-size:11px;color:var(--t2)}
-/* DEPT GRID */
-.dept-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.dept-card{background:#fff;border:1px solid var(--bor);border-radius:var(--rl);padding:16px;position:relative}
-.dept-name{font-size:15px;font-weight:600;color:var(--t);margin-bottom:4px}
-.dept-desc{font-size:12px;color:var(--t2)}
-.dept-actions{display:flex;gap:6px;margin-top:10px}
+/* DEPT */
+.dgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.dc{background:#fff;border:1px solid var(--bor);border-radius:var(--rl);padding:15px}
+.dn{font-size:14px;font-weight:600;color:var(--t);margin-bottom:3px}
+.dd{font-size:12px;color:var(--t2);margin-bottom:8px}
 /* AVISOS */
-.av-card{background:#fff;border:1px solid var(--bor);border-radius:var(--rl);padding:16px;margin-bottom:10px;border-left:4px solid var(--blue)}
-.av-tit{font-size:15px;font-weight:600;color:var(--t);margin-bottom:4px}
-.av-txt{font-size:13px;color:var(--t2);line-height:1.5;margin-bottom:8px}
-.av-meta{font-size:11px;color:var(--t3)}
-/* NOTIF */
-.notif-bar{position:fixed;top:16px;right:16px;z-index:999;display:flex;flex-direction:column;gap:8px;max-width:320px}
-.notif{background:#fff;border:1px solid var(--bor);border-radius:var(--rl);padding:12px 16px;box-shadow:0 4px 20px rgba(0,0,0,.12);border-left:4px solid var(--blue);animation:slideIn .3s ease}
-.notif.success{border-left-color:#16a34a}
-.notif.warning{border-left-color:#d97706}
-.notif.error{border-left-color:#dc2626}
-.notif-title{font-size:13px;font-weight:600;color:var(--t);margin-bottom:2px}
-.notif-msg{font-size:12px;color:var(--t2)}
-@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
-/* EMPTY / MISC */
-.empty{text-align:center;padding:40px;color:var(--t2);background:#fff;border:1px solid var(--bor);border-radius:var(--rl)}
-.tag-wa{background:#dcfce7;color:#15803d;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600}
-.tag-email{background:#eff6ff;color:#1e40af;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600}
-.loading{text-align:center;padding:40px;color:var(--t2)}
+.avc{background:#fff;border:1px solid var(--bor);border-radius:var(--rl);padding:16px;margin-bottom:10px;border-left:4px solid var(--blue)}
+.avt{font-size:15px;font-weight:600;color:var(--t);margin-bottom:5px}
+.avx{font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:8px}
+.avm{font-size:11px;color:var(--t3)}
+/* NOTIF TOAST */
+.nbar{position:fixed;top:14px;right:14px;z-index:999;display:flex;flex-direction:column;gap:8px;max-width:300px}
+.toast{background:#fff;border:1px solid var(--bor);border-radius:var(--rl);padding:12px 14px;box-shadow:0 4px 20px rgba(0,0,0,.1);border-left:4px solid var(--blue);animation:si .25s ease}
+.toast.ok{border-left-color:#16a34a}.toast.err{border-left-color:#dc2626}.toast.warn{border-left-color:#d97706}
+.toast-t{font-size:13px;font-weight:600;color:var(--t);margin-bottom:2px}
+.toast-m{font-size:12px;color:var(--t2)}
+@keyframes si{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+.empty{text-align:center;padding:36px;color:var(--t2);background:#fff;border:1px solid var(--bor);border-radius:var(--rl)}
 /* RESPONSIVE */
-@media(max-width:768px){
+@media(max-width:720px){
   .app{flex-direction:column}
-  .sb{width:100%;flex-direction:row;flex-wrap:wrap}
+  .sb{width:100%;height:auto;position:relative;flex-direction:row;flex-wrap:wrap}
   .sb-logo{flex:1;padding:12px}
-  .sb-nav{flex-direction:row;padding:6px;width:100%;border-top:1px solid rgba(255,255,255,.1);flex:none;overflow-x:auto}
-  .sb-foot{width:100%;padding:8px 12px;border-top:1px solid rgba(255,255,255,.1)}
+  .sb-nav{flex-direction:row;padding:6px;width:100%;border-top:1px solid rgba(255,255,255,.1);flex:none;overflow-x:auto;gap:2px}
   .sb-sep{display:none}
+  .sb-foot{width:100%;padding:8px 12px}
   .stats{grid-template-columns:repeat(2,1fr)}
-  .frow,.frow3{grid-template-columns:1fr}
+  .frow{grid-template-columns:1fr}
   .sec{padding:14px}
-  .tgrid{grid-template-columns:1fr}
-  .dept-grid{grid-template-columns:1fr 1fr}
+  .tgrid,.dgrid{grid-template-columns:1fr}
   .drow{grid-template-columns:1fr}
   .ni{padding:7px 10px;font-size:12px}
-  .ni-icon{display:none}
 }
 </style>
 </head>
 <body>
-<div class="notif-bar" id="notif-bar"></div>
+<div class="nbar" id="nbar"></div>
 <div class="app">
   <aside class="sb">
     <div class="sb-logo">
-      <div class="logo-mark">IMA</div>
-      <div><div class="sb-name">IMA Lda</div><div class="sb-role" id="u-role">Painel</div></div>
+      <div class="lm">IMA</div>
+      <div><div class="sb-name">IMA Lda</div><div class="sb-sub" id="u-role">Painel</div></div>
     </div>
     <nav class="sb-nav">
-      <button class="ni active" onclick="showSec('tickets')"><span class="ni-icon">◈</span> Problemas <span class="nb" id="nbadge"></span></button>
-      <button class="ni" onclick="showSec('avisos')"><span class="ni-icon">◉</span> Avisos</button>
-      <button class="ni" onclick="showSec('mensagens')"><span class="ni-icon">◎</span> Mensagens</button>
+      <button class="ni active" onclick="showSec('tickets')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg>
+        Problemas <span class="nb" id="nbadge"></span>
+      </button>
+      <button class="ni" onclick="showSec('avisos')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Avisos
+      </button>
+      <button class="ni" onclick="showSec('mensagens')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Mensagens
+      </button>
       <div class="sb-sep" id="sep-admin"></div>
-      <button class="ni" onclick="showSec('equipa')" id="nav-eq" style="display:none"><span class="ni-icon">◑</span> Equipa</button>
-      <button class="ni" onclick="showSec('departamentos')" id="nav-dep" style="display:none"><span class="ni-icon">◐</span> Departamentos</button>
+      <button class="ni" id="nav-eq" style="display:none" onclick="showSec('equipa')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Equipa
+      </button>
+      <button class="ni" id="nav-dep" style="display:none" onclick="showSec('departamentos')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        Departamentos
+      </button>
     </nav>
     <div class="sb-foot">
-      <div class="av av-sm" id="u-av" style="width:32px;height:32px;font-size:11px;background:#E6F1FB;color:#0C447C">--</div>
+      <div class="av" id="u-av" style="background:#dbeafe;color:#1e40af;width:30px;height:30px;font-size:11px">--</div>
       <div class="u-info"><div class="u-name" id="u-name">...</div><div class="u-cargo" id="u-cargo">...</div></div>
       <button class="btn-out" onclick="logout()" title="Sair">⏻</button>
     </div>
@@ -213,13 +218,13 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
     <!-- TICKETS -->
     <section class="sec active" id="sec-tickets">
       <div class="sec-hdr">
-        <div><h1>Problemas & Tarefas</h1><p class="sec-desc">Regista e acompanha todos os problemas da empresa</p></div>
+        <div><h1>Problemas & Tarefas</h1><p class="sec-desc">Regista e acompanha todos os problemas da IMA Lda</p></div>
         <button class="bp" onclick="openNovo()">+ Novo problema</button>
       </div>
       <div class="stats" id="stats"></div>
       <div class="fbar">
         <div class="filters" id="filters"></div>
-        <input type="text" class="srch" id="srch" placeholder="🔍 Pesquisar..." oninput="renderTickets()">
+        <input type="text" class="srch" id="srch" placeholder="Pesquisar..." oninput="renderTickets()">
       </div>
       <div id="tlist"></div>
     </section>
@@ -227,10 +232,10 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
     <!-- AVISOS -->
     <section class="sec" id="sec-avisos">
       <div class="sec-hdr">
-        <div><h1>Avisos</h1><p class="sec-desc">Anúncios e comunicados para a equipa</p></div>
-        <button class="bp" id="btn-novo-aviso" onclick="openAviso()" style="display:none">+ Novo aviso</button>
+        <div><h1>Avisos</h1><p class="sec-desc">Comunicados para toda a equipa</p></div>
+        <button class="bp" id="btn-av" onclick="openAviso()" style="display:none">+ Novo aviso</button>
       </div>
-      <div id="avisos-list"></div>
+      <div id="av-list"></div>
     </section>
 
     <!-- MENSAGENS -->
@@ -249,7 +254,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
     <section class="sec" id="sec-equipa">
       <div class="sec-hdr">
         <div><h1>Equipa</h1><p class="sec-desc">Gestão de colaboradores</p></div>
-        <button class="bp" onclick="openNovoColab()">+ Adicionar colaborador</button>
+        <button class="bp" onclick="openColab()">+ Adicionar colaborador</button>
       </div>
       <div class="tgrid" id="eq-grid"></div>
     </section>
@@ -258,9 +263,9 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
     <section class="sec" id="sec-departamentos">
       <div class="sec-hdr">
         <div><h1>Departamentos</h1><p class="sec-desc">Gerir departamentos da empresa</p></div>
-        <button class="bp" onclick="openNovoDept()">+ Novo departamento</button>
+        <button class="bp" onclick="openDept()">+ Novo departamento</button>
       </div>
-      <div class="dept-grid" id="dept-grid"></div>
+      <div class="dgrid" id="dep-grid"></div>
     </section>
   </main>
 </div>
@@ -268,7 +273,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
 <!-- MODAL NOVO TICKET -->
 <div class="mo" id="m-novo" style="display:none" onclick="if(event.target.id==='m-novo')closeNovo()">
   <div class="modal">
-    <div class="mh"><h2>Registar novo problema</h2><button class="mc-btn" onclick="closeNovo()">×</button></div>
+    <div class="mh"><h2>Registar novo problema</h2><button class="mc" onclick="closeNovo()">×</button></div>
     <div class="mb">
       <div class="fg"><label class="fl">Título *</label><input type="text" id="n-tit" placeholder="Descreva brevemente o problema"></div>
       <div class="fg"><label class="fl">Descrição detalhada</label><textarea id="n-desc" placeholder="O que aconteceu? Quando? Onde? Qual o impacto?"></textarea></div>
@@ -285,11 +290,11 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
         <div class="fg" id="campo-resp"><label class="fl">Responsável</label><select id="n-resp"></select></div>
       </div>
       <div class="fg">
-        <label class="fl">Notificar via</label>
-        <div style="display:flex;gap:12px;margin-top:4px">
-          <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--t);text-transform:none;letter-spacing:0"><input type="checkbox" id="notif-email" checked style="width:auto;padding:0"> Email</label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--t);text-transform:none;letter-spacing:0"><input type="checkbox" id="notif-wa" checked style="width:auto;padding:0"> WhatsApp</label>
-        </div>
+        <label class="fl">Notificar responsável por email</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t);cursor:pointer;margin-top:4px">
+          <input type="checkbox" id="notif-email" checked style="width:auto;padding:0;margin:0">
+          Enviar email de notificação ao responsável
+        </label>
       </div>
     </div>
     <div class="mf"><button class="bs" onclick="closeNovo()">Cancelar</button><button class="bp" onclick="criarTicket()">Registar problema</button></div>
@@ -299,46 +304,46 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
 <!-- MODAL DETALHE TICKET -->
 <div class="mo" id="m-det" style="display:none" onclick="if(event.target.id==='m-det')closeDet()">
   <div class="modal modal-lg">
-    <div class="mh"><h2 id="det-tit">-</h2><button class="mc-btn" onclick="closeDet()">×</button></div>
+    <div class="mh"><h2 id="det-tit">-</h2><button class="mc" onclick="closeDet()">×</button></div>
     <div class="mb" id="det-body"></div>
   </div>
 </div>
 
-<!-- MODAL NOVO AVISO -->
-<div class="mo" id="m-aviso" style="display:none" onclick="if(event.target.id==='m-aviso')closeAviso()">
+<!-- MODAL AVISO -->
+<div class="mo" id="m-av" style="display:none" onclick="if(event.target.id==='m-av')closeAviso()">
   <div class="modal">
-    <div class="mh"><h2>Novo aviso</h2><button class="mc-btn" onclick="closeAviso()">×</button></div>
+    <div class="mh"><h2>Novo aviso</h2><button class="mc" onclick="closeAviso()">×</button></div>
     <div class="mb">
-      <div class="fg"><label class="fl">Título do aviso</label><input type="text" id="av-tit" placeholder="Ex: Reunião amanhã às 9h"></div>
-      <div class="fg"><label class="fl">Mensagem</label><textarea id="av-txt" placeholder="Escreve o aviso para a equipa..." style="min-height:100px"></textarea></div>
+      <div class="fg"><label class="fl">Título *</label><input type="text" id="av-tit" placeholder="Ex: Reunião amanhã às 9h"></div>
+      <div class="fg"><label class="fl">Mensagem *</label><textarea id="av-txt" placeholder="Escreve o aviso para a equipa..." style="min-height:100px"></textarea></div>
       <div class="fg">
-        <label class="fl">Notificar a equipa via</label>
-        <div style="display:flex;gap:12px;margin-top:4px">
-          <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--t);text-transform:none;letter-spacing:0"><input type="checkbox" id="av-email" checked style="width:auto;padding:0"> Email</label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--t);text-transform:none;letter-spacing:0"><input type="checkbox" id="av-wa" checked style="width:auto;padding:0"> WhatsApp</label>
-        </div>
+        <label class="fl">Notificar equipa por email</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t);cursor:pointer;margin-top:4px">
+          <input type="checkbox" id="av-email" checked style="width:auto;padding:0;margin:0">
+          Enviar email a toda a equipa
+        </label>
       </div>
     </div>
     <div class="mf"><button class="bs" onclick="closeAviso()">Cancelar</button><button class="bp" onclick="criarAviso()">Publicar aviso</button></div>
   </div>
 </div>
 
-<!-- MODAL NOVO DEPARTAMENTO -->
-<div class="mo" id="m-dept" style="display:none" onclick="if(event.target.id==='m-dept')closeDept()">
+<!-- MODAL DEPARTAMENTO -->
+<div class="mo" id="m-dep" style="display:none" onclick="if(event.target.id==='m-dep')closeDept()">
   <div class="modal">
-    <div class="mh"><h2 id="dept-modal-tit">Novo departamento</h2><button class="mc-btn" onclick="closeDept()">×</button></div>
+    <div class="mh"><h2 id="dep-tit">Novo departamento</h2><button class="mc" onclick="closeDept()">×</button></div>
     <div class="mb">
-      <div class="fg"><label class="fl">Nome do departamento *</label><input type="text" id="dept-nome" placeholder="Ex: Produção"></div>
-      <div class="fg"><label class="fl">Descrição</label><input type="text" id="dept-desc" placeholder="Breve descrição"></div>
+      <div class="fg"><label class="fl">Nome *</label><input type="text" id="dep-nome" placeholder="Ex: Produção"></div>
+      <div class="fg"><label class="fl">Descrição</label><input type="text" id="dep-desc" placeholder="Breve descrição"></div>
     </div>
     <div class="mf"><button class="bs" onclick="closeDept()">Cancelar</button><button class="bp" onclick="salvarDept()">Guardar</button></div>
   </div>
 </div>
 
-<!-- MODAL NOVO COLABORADOR -->
-<div class="mo" id="m-colab" style="display:none" onclick="if(event.target.id==='m-colab')closeColab()">
+<!-- MODAL COLABORADOR -->
+<div class="mo" id="m-col" style="display:none" onclick="if(event.target.id==='m-col')closeColab()">
   <div class="modal">
-    <div class="mh"><h2>Adicionar colaborador</h2><button class="mc-btn" onclick="closeColab()">×</button></div>
+    <div class="mh"><h2>Adicionar colaborador</h2><button class="mc" onclick="closeColab()">×</button></div>
     <div class="mb">
       <div class="frow">
         <div class="fg"><label class="fl">Nome *</label><input type="text" id="col-nome" placeholder="Nome completo"></div>
@@ -346,15 +351,12 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
       </div>
       <div class="frow">
         <div class="fg"><label class="fl">Email *</label><input type="email" id="col-email" placeholder="email@ima.co.ao"></div>
-        <div class="fg"><label class="fl">WhatsApp</label><input type="text" id="col-wa" placeholder="+244912345678"></div>
+        <div class="fg"><label class="fl">Departamento</label><select id="col-dep"></select></div>
       </div>
       <div class="frow">
-        <div class="fg"><label class="fl">Departamento</label><select id="col-dep"></select></div>
-        <div class="fg"><label class="fl">Perfil</label>
-          <select id="col-role"><option value="colaborador">Colaborador</option><option value="gestor">Gestor</option></select>
-        </div>
+        <div class="fg"><label class="fl">Perfil</label><select id="col-role"><option value="colaborador">Colaborador</option><option value="gestor">Gestor</option></select></div>
+        <div class="fg"><label class="fl">Password inicial</label><input type="text" id="col-pass" value="IMA2026!"></div>
       </div>
-      <div class="fg"><label class="fl">Password inicial</label><input type="text" id="col-pass" placeholder="Mínimo 6 caracteres" value="IMA2026!"></div>
     </div>
     <div class="mf"><button class="bs" onclick="closeColab()">Cancelar</button><button class="bp" onclick="criarColab()">Criar conta</button></div>
   </div>
@@ -362,23 +364,34 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
 
 <script>
 const SB=supabase.createClient('https://wvmprizthrcxmvkkoiyu.supabase.co','sb_publishable_9VegElC1LK6TxZzhXRrfIA_3vFkTVrj');
-const NOTIF_FN='https://wvmprizthrcxmvkkoiyu.supabase.co/functions/v1/notificar';
+const EMAIL_FN='https://wvmprizthrcxmvkkoiyu.supabase.co/functions/v1/send-email';
 
 let CU=null,CP=null,profiles=[],tickets=[],depts=[],avisos=[];
-let filter='todos',detId=null,editDeptId=null;
-const AVC=['#DBEAFE|#1e40af','#D1FAE5|#065f46','#FEE2E2|#991b1b','#EDE9FE|#5b21b6','#FEF3C7|#92400e'];
+let filter='todos',detId=null,editDepId=null;
+const AVC=['#dbeafe|#1e40af','#dcfce7|#166534','#fef2f2|#991b1b','#ede9fe|#5b21b6','#fef3c7|#92400e'];
 function ac(i){const c=AVC[((i||0)%AVC.length+AVC.length)%AVC.length].split('|');return`background:${c[0]};color:${c[1]}`}
 function ini(n){if(!n)return'??';const p=n.trim().split(' ');return p.length>=2?(p[0][0]+p[p.length-1][0]).toUpperCase():n.slice(0,2).toUpperCase()}
 function fd(dt){const d=new Date(dt);return`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
 function cap(s){return s?s.charAt(0).toUpperCase()+s.slice(1):''}
 
 function toast(msg,tipo='info'){
-  const bar=document.getElementById('notif-bar');
+  const bar=document.getElementById('nbar');
   const el=document.createElement('div');
-  el.className=`notif ${tipo}`;
-  el.innerHTML=`<div class="notif-title">${tipo==='success'?'✓ Sucesso':tipo==='error'?'✗ Erro':tipo==='warning'?'⚠ Atenção':'ℹ Info'}</div><div class="notif-msg">${msg}</div>`;
-  bar.appendChild(el);
-  setTimeout(()=>el.remove(),4000);
+  el.className=`toast ${tipo==='success'?'ok':tipo==='error'?'err':tipo==='warning'?'warn':''}`;
+  el.innerHTML=`<div class="toast-t">${tipo==='success'?'✓ Sucesso':tipo==='error'?'✗ Erro':'ℹ Info'}</div><div class="toast-m">${msg}</div>`;
+  bar.appendChild(el);setTimeout(()=>el.remove(),4000);
+}
+
+async function enviarEmail(para,assunto,corpo){
+  try{
+    const dest=Array.isArray(para)?para:[para];
+    const r=await fetch(EMAIL_FN,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer sb_publishable_9VegElC1LK6TxZzhXRrfIA_3vFkTVrj'},
+      body:JSON.stringify({para:dest,assunto,corpo})
+    });
+    return r.ok;
+  }catch(e){console.error('Email err:',e);return false;}
 }
 
 async function init(){
@@ -390,29 +403,25 @@ async function init(){
   document.getElementById('u-name').textContent=p?.nome||CU.email;
   document.getElementById('u-cargo').textContent=p?.cargo||'';
   document.getElementById('u-role').textContent=p?.role==='gestor'?'Diretor Geral':'Colaborador';
-  const avEl=document.getElementById('u-av');
-  avEl.textContent=ini(p?.nome||'');avEl.style.cssText=ac(0)+';width:32px;height:32px;font-size:11px';
+  const av=document.getElementById('u-av');av.textContent=ini(p?.nome||'');av.style.cssText=ac(0)+';width:30px;height:30px;font-size:11px';
   if(p?.role==='gestor'){
     document.getElementById('nav-eq').style.display='flex';
     document.getElementById('nav-dep').style.display='flex';
-    document.getElementById('btn-novo-aviso').style.display='flex';
+    document.getElementById('btn-av').style.display='flex';
   }
-  await loadAll();
-  renderStats();renderFilters();renderTickets();
-  subscribe();
+  await loadAll();renderStats();renderFilters();renderTickets();subscribe();
 }
 
 async function loadAll(){
   const[{data:pr},{data:tk},{data:dp},{data:av}]=await Promise.all([
     SB.from('profiles').select('*').order('nome'),
-    SB.from('tickets').select('*,responsavel:profiles!tickets_responsavel_id_fkey(id,nome,cargo,whatsapp,email_notif),criador:profiles!tickets_criado_por_fkey(id,nome),departamento:departamentos(id,nome)').order('created_at',{ascending:false}),
+    SB.from('tickets').select('*,responsavel:profiles!tickets_responsavel_id_fkey(id,nome,cargo,email_notif),criador:profiles!tickets_criado_por_fkey(id,nome),departamento:departamentos(id,nome)').order('created_at',{ascending:false}),
     SB.from('departamentos').select('*').order('nome'),
     SB.from('avisos').select('*,autor:profiles(id,nome)').order('created_at',{ascending:false})
   ]);
   profiles=pr||[];tickets=tk||[];depts=dp||[];avisos=av||[];
   const ab=tickets.filter(t=>t.estado==='aberto'||t.estado==='em-curso').length;
-  const nb=document.getElementById('nbadge');
-  nb.textContent=ab||'';nb.style.display=ab>0?'inline-flex':'none';
+  const nb=document.getElementById('nbadge');nb.textContent=ab||'';nb.style.display=ab>0?'inline-flex':'none';
 }
 
 function subscribe(){
@@ -455,7 +464,7 @@ function renderTickets(){
       <div class="tt">
         <div class="ti">
           <div class="tit">${t.titulo}</div>
-          <div class="tdesc">${(t.descricao||'').length>100?(t.descricao||'').slice(0,100)+'...':(t.descricao||'Sem descrição.')}</div>
+          <div class="tdesc">${t.descricao||'Sem descrição.'}</div>
           <div class="tmeta">
             <span class="badge b-${t.prioridade}">${cap(t.prioridade)}</span>
             <span class="badge b-${t.estado}">${cap(t.estado).replace('-',' ')}</span>
@@ -471,8 +480,7 @@ function renderTickets(){
 }
 
 async function abrirTicket(id){
-  detId=id;
-  const t=tickets.find(x=>x.id===id);if(!t)return;
+  detId=id;const t=tickets.find(x=>x.id===id);if(!t)return;
   const r=t.responsavel;const ri=profiles.findIndex(p=>p.id===r?.id);
   const isG=CP?.role==='gestor';
   document.getElementById('det-tit').textContent=t.titulo;
@@ -488,12 +496,13 @@ async function abrirTicket(id){
       <div class="df"><div class="dl">Responsável</div><div class="av-row">${r?`<span class="av-sm" style="${ac(ri)}">${ini(r.nome)}</span><div><div class="dv">${r.nome}</div><div class="dsub">${r.cargo||''}</div></div>`:'<span class="dv">Não atribuído</span>'}</div></div>
       <div class="df"><div class="dl">Registado em</div><div class="dv">${fd(t.created_at)}</div></div>
     </div>
-    ${isG?`<div class="dl">Atualizar estado</div><div class="ebtns">${['aberto','em-curso','resolvido','fechado'].map(s=>`<button class="fb${t.estado===s?' active':''}" onclick="mudarEstado(${t.id},'${s}')">${cap(s).replace('-',' ')}</button>`).join('')}</div>
-    <div style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap">
-      <button class="bp" style="font-size:12px;padding:6px 12px" onclick="notificarTicket(${t.id},'email')">✉ Notificar por email</button>
-      <button class="bp bp-green" style="font-size:12px;padding:6px 12px" onclick="notificarTicket(${t.id},'whatsapp')">📱 Notificar por WhatsApp</button>
+    ${isG?`
+    <div class="dl">Atualizar estado</div>
+    <div class="ebtns">${['aberto','em-curso','resolvido','fechado'].map(s=>`<button class="fb${t.estado===s?' active':''}" onclick="mudarEstado(${t.id},'${s}')">${cap(s).replace('-',' ')}</button>`).join('')}</div>
+    <div style="margin-bottom:14px">
+      <button class="bp bp-sm" onclick="notifManual(${t.id})">✉ Notificar responsável por email</button>
     </div>`:''}
-    <div class="dl" style="margin-top:4px;margin-bottom:6px">Mensagens & Atualizações</div>
+    <div class="dl" style="margin-bottom:6px">Mensagens & Atualizações</div>
     <div class="ml" id="msgs-tk"></div>
     <div class="cir">
       <input type="text" id="msg-in" placeholder="Adicionar atualização..." onkeydown="if(event.key==='Enter')sendMsgTk(${id})">
@@ -506,7 +515,7 @@ async function abrirTicket(id){
 async function loadMsgsTk(id){
   const{data}=await SB.from('mensagens_ticket').select('*,autor:profiles(id,nome)').eq('ticket_id',id).order('created_at');
   const el=document.getElementById('msgs-tk');if(!el)return;
-  if(!data||!data.length){el.innerHTML='<div class="me">Sem atualizações ainda.</div>';return}
+  if(!data||!data.length){el.innerHTML='<div style="font-size:13px;color:var(--t3);padding:8px 0">Sem atualizações ainda.</div>';return}
   el.innerHTML=data.map(m=>{
     const ai=profiles.findIndex(p=>p.id===m.autor?.id);
     return`<div class="mi"><div class="mtop"><div class="av-row"><span class="av-sm" style="${ac(ai)}">${ini(m.autor?.nome||'?')}</span><span class="ma">${m.autor?.nome||'?'}</span></div><span class="md">${fd(m.created_at)}</span></div><div class="mt">${m.texto}</div></div>`;
@@ -518,53 +527,39 @@ async function sendMsgTk(id){
   const inp=document.getElementById('msg-in');const txt=inp.value.trim();if(!txt)return;
   await SB.from('mensagens_ticket').insert({ticket_id:id,autor_id:CU.id,texto:txt});
   inp.value='';await loadMsgsTk(id);
-  // Auto-notificar responsável por email quando há nova mensagem
+  // Notificar responsável quando alguém adiciona mensagem
   const t=tickets.find(x=>x.id===id);
-  if(t?.responsavel&&t.responsavel_id!==CU.id){
-    const assunto=`[IMA] Nova mensagem: ${t.titulo}`;
-    const corpo=`<p><strong>${CP?.nome||'Alguém'}</strong> adicionou uma atualização ao problema <strong>${t.titulo}</strong>:</p><blockquote style="border-left:3px solid #185FA5;padding-left:12px;color:#64748b">${txt}</blockquote><p><a href="https://ima-gestao.vercel.app/app.html">Ver no sistema</a></p>`;
-    enviarNotificacao([{email:t.responsavel.email_notif,whatsapp:t.responsavel.whatsapp}],assunto,corpo,'email');
+  if(t?.responsavel?.email_notif&&t.responsavel_id!==CU.id){
+    const assunto=`[IMA] Nova atualização: ${t.titulo}`;
+    const corpo=`<p><strong>${CP?.nome||'Utilizador'}</strong> adicionou uma atualização ao problema <strong>"${t.titulo}"</strong>:</p><blockquote style="border-left:3px solid #185FA5;padding-left:12px;color:#64748b;margin:12px 0">${txt}</blockquote><p><a href="https://ima-gestao.vercel.app/app.html" style="background:#185FA5;color:#fff;padding:8px 16px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:8px">Ver no sistema</a></p>`;
+    enviarEmail(t.responsavel.email_notif,assunto,corpo);
   }
 }
 
 async function mudarEstado(id,estado){
   await SB.from('tickets').update({estado}).eq('id',id);
   const t=tickets.find(x=>x.id===id);
-  // Notificar automaticamente ao mudar estado
-  if(t){
-    const dest=[];
-    if(t.responsavel&&t.responsavel_id!==CU.id)dest.push({email:t.responsavel.email_notif,whatsapp:t.responsavel.whatsapp});
-    if(dest.length>0){
-      const estadoLabel=cap(estado).replace('-',' ');
-      const assunto=`[IMA] Problema atualizado: ${t.titulo}`;
-      const corpo=`<p>O estado do problema <strong>${t.titulo}</strong> foi alterado para <strong>${estadoLabel}</strong>.</p><p>Alterado por: ${CP?.nome||'Gestor'}</p><p><a href="https://ima-gestao.vercel.app/app.html">Ver no sistema</a></p>`;
-      enviarNotificacao(dest,assunto,corpo,'ambos');
-    }
+  if(t?.responsavel?.email_notif&&t.responsavel_id!==CU.id){
+    const lbl=cap(estado).replace('-',' ');
+    const assunto=`[IMA] Problema atualizado: ${t.titulo}`;
+    const corpo=`<p>O estado do problema <strong>"${t.titulo}"</strong> foi alterado para <strong>${lbl}</strong>.</p><p style="color:#64748b">Alterado por: ${CP?.nome||'Gestor'}</p><p><a href="https://ima-gestao.vercel.app/app.html" style="background:#185FA5;color:#fff;padding:8px 16px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:8px">Ver no sistema</a></p>`;
+    enviarEmail(t.responsavel.email_notif,assunto,corpo);
   }
   await loadAll();renderStats();renderTickets();await abrirTicket(id);
   toast(`Estado alterado para "${cap(estado).replace('-',' ')}"`, 'success');
 }
 
-async function notificarTicket(id,tipo){
-  const t=tickets.find(x=>x.id===id);if(!t)return;
-  const dest=[];
-  if(t.responsavel)dest.push({email:t.responsavel.email_notif,whatsapp:t.responsavel.whatsapp});
-  const assunto=`[IMA] Problema: ${t.titulo}`;
-  const corpo=`<p>Tens um problema atribuído: <strong>${t.titulo}</strong></p><p>Estado: ${cap(t.estado)}<br>Prioridade: ${cap(t.prioridade)}</p>${t.descricao?`<p>${t.descricao}</p>`:''}<p><a href="https://ima-gestao.vercel.app/app.html">Ver no sistema</a></p>`;
-  const ok=await enviarNotificacao(dest,assunto,corpo,tipo);
-  toast(ok?`Notificação enviada via ${tipo}`:`Erro ao enviar notificação`,ok?'success':'error');
-}
-
-async function enviarNotificacao(destinatarios,assunto,mensagem,tipo){
-  try{
-    const r=await fetch(NOTIF_FN,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer sb_publishable_9VegElC1LK6TxZzhXRrfIA_3vFkTVrj`},body:JSON.stringify({tipo,destinatarios,assunto,mensagem})});
-    return r.ok;
-  }catch(e){console.error('Notif error:',e);return false;}
+async function notifManual(id){
+  const t=tickets.find(x=>x.id===id);if(!t?.responsavel?.email_notif)return toast('Responsável sem email configurado','error');
+  const assunto=`[IMA] Problema atribuído: ${t.titulo}`;
+  const corpo=`<p>Olá <strong>${t.responsavel.nome}</strong>,</p><p>Tens um problema atribuído: <strong>"${t.titulo}"</strong></p><p>Estado: ${cap(t.estado)}<br>Prioridade: ${cap(t.prioridade)}</p>${t.descricao?`<p style="color:#64748b">${t.descricao}</p>`:''}<p><a href="https://ima-gestao.vercel.app/app.html" style="background:#185FA5;color:#fff;padding:8px 16px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:8px">Ver no sistema</a></p>`;
+  const ok=await enviarEmail(t.responsavel.email_notif,assunto,corpo);
+  toast(ok?'Email enviado com sucesso!':'Erro ao enviar email',ok?'success':'error');
 }
 
 function openNovo(){
   document.getElementById('n-dep').innerHTML='<option value="">Sem departamento</option>'+depts.map(d=>`<option value="${d.id}">${d.nome}</option>`).join('');
-  document.getElementById('n-resp').innerHTML=profiles.filter(p=>p.ativo!==false).map(p=>`<option value="${p.id}">${p.nome} — ${p.cargo||''}</option>`).join('');
+  document.getElementById('n-resp').innerHTML=profiles.filter(p=>p.ativo!==false).map(p=>`<option value="${p.id}">${p.nome}${p.cargo?' — '+p.cargo:''}</option>`).join('');
   document.getElementById('campo-resp').style.display=CP?.role==='gestor'?'block':'none';
   document.getElementById('m-novo').style.display='flex';
 }
@@ -574,101 +569,78 @@ async function criarTicket(){
   if(!titulo){alert('Introduz o título do problema.');return}
   const resp_id=CP?.role==='gestor'?document.getElementById('n-resp').value:CP.id;
   const dep_id=document.getElementById('n-dep').value||null;
-  const notifEmail=document.getElementById('notif-email').checked;
-  const notifWa=document.getElementById('notif-wa').checked;
-  const{data:tk,error}=await SB.from('tickets').insert({titulo,descricao:document.getElementById('n-desc').value.trim()||null,prioridade:document.getElementById('n-pri').value,categoria:document.getElementById('n-cat').value,estado:'aberto',responsavel_id:resp_id,departamento_id:dep_id,criado_por:CU.id}).select().single();
+  const notif=document.getElementById('notif-email').checked;
+  const{error}=await SB.from('tickets').insert({titulo,descricao:document.getElementById('n-desc').value.trim()||null,prioridade:document.getElementById('n-pri').value,categoria:document.getElementById('n-cat').value,estado:'aberto',responsavel_id:resp_id,departamento_id:dep_id?parseInt(dep_id):null,criado_por:CU.id});
   if(error){alert('Erro: '+error.message);return}
   closeNovo();document.getElementById('n-tit').value='';document.getElementById('n-desc').value='';
   await loadAll();renderStats();renderTickets();
-  toast('Problema registado com sucesso!','success');
-  // Notificar responsável
-  const resp=profiles.find(p=>p.id===resp_id);
-  if(resp&&resp_id!==CU.id){
-    const tipo=notifEmail&&notifWa?'ambos':notifEmail?'email':notifWa?'whatsapp':'nenhum';
-    if(tipo!=='nenhum'){
+  toast('Problema registado!','success');
+  if(notif&&resp_id!==CU.id){
+    const resp=profiles.find(p=>p.id===resp_id);
+    if(resp?.email_notif){
+      const pri=document.getElementById('n-pri').value;
       const assunto=`[IMA] Novo problema atribuído: ${titulo}`;
-      const corpo=`<p>Olá ${resp.nome},</p><p>Foi-te atribuído um novo problema: <strong>${titulo}</strong></p><p>Prioridade: ${cap(document.getElementById('n-pri').value)}</p><p><a href="https://ima-gestao.vercel.app/app.html" style="background:#185FA5;color:#fff;padding:8px 16px;border-radius:8px;text-decoration:none">Ver no sistema</a></p>`;
-      enviarNotificacao([{email:resp.email_notif,whatsapp:resp.whatsapp}],assunto,corpo,tipo);
+      const corpo=`<p>Olá <strong>${resp.nome}</strong>,</p><p>Foi-te atribuído um novo problema: <strong>"${titulo}"</strong></p><p>Prioridade: <strong>${cap(pri)}</strong></p><p><a href="https://ima-gestao.vercel.app/app.html" style="background:#185FA5;color:#fff;padding:8px 16px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:8px">Ver no sistema</a></p>`;
+      enviarEmail(resp.email_notif,assunto,corpo);
     }
   }
 }
 
 function renderAvisos(){
-  const el=document.getElementById('avisos-list');
+  const el=document.getElementById('av-list');
   if(!avisos.length){el.innerHTML='<div class="empty">Sem avisos ainda.</div>';return}
-  el.innerHTML=avisos.map(a=>`
-    <div class="av-card">
-      <div class="av-tit">${a.titulo}</div>
-      <div class="av-txt">${a.texto}</div>
-      <div class="av-meta">Publicado por ${a.autor?.nome||'?'} · ${fd(a.created_at)}</div>
-    </div>`).join('');
+  el.innerHTML=avisos.map(a=>`<div class="avc"><div class="avt">${a.titulo}</div><div class="avx">${a.texto}</div><div class="avm">Por ${a.autor?.nome||'?'} · ${fd(a.created_at)}</div></div>`).join('');
 }
-
-function openAviso(){document.getElementById('m-aviso').style.display='flex'}
-function closeAviso(){document.getElementById('m-aviso').style.display='none'}
+function openAviso(){document.getElementById('m-av').style.display='flex'}
+function closeAviso(){document.getElementById('m-av').style.display='none'}
 
 async function criarAviso(){
   const titulo=document.getElementById('av-tit').value.trim();
   const texto=document.getElementById('av-txt').value.trim();
   if(!titulo||!texto){alert('Preenche o título e a mensagem.');return}
-  const notifEmail=document.getElementById('av-email').checked;
-  const notifWa=document.getElementById('av-wa').checked;
+  const notif=document.getElementById('av-email').checked;
   await SB.from('avisos').insert({titulo,texto,autor_id:CU.id});
   closeAviso();document.getElementById('av-tit').value='';document.getElementById('av-txt').value='';
-  await loadAll();renderAvisos();
-  toast('Aviso publicado!','success');
-  // Notificar toda a equipa
-  if(notifEmail||notifWa){
-    const dest=profiles.filter(p=>p.id!==CU.id&&p.ativo!==false).map(p=>({email:p.email_notif,whatsapp:p.whatsapp}));
-    const tipo=notifEmail&&notifWa?'ambos':notifEmail?'email':'whatsapp';
-    const corpo=`<p><strong>Aviso da IMA Lda:</strong> ${titulo}</p><p>${texto}</p><p><a href="https://ima-gestao.vercel.app/app.html">Ver no sistema</a></p>`;
-    enviarNotificacao(dest,`[IMA] Aviso: ${titulo}`,corpo,tipo);
+  await loadAll();renderAvisos();toast('Aviso publicado!','success');
+  if(notif){
+    const dest=profiles.filter(p=>p.id!==CU.id&&p.email_notif).map(p=>p.email_notif);
+    if(dest.length){
+      const corpo=`<p><strong>Aviso da IMA Lda:</strong></p><h3 style="margin:8px 0">${titulo}</h3><p style="color:#64748b;line-height:1.6">${texto}</p><p><a href="https://ima-gestao.vercel.app/app.html" style="background:#185FA5;color:#fff;padding:8px 16px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:8px">Ver no sistema</a></p>`;
+      enviarEmail(dest,`[IMA] Aviso: ${titulo}`,corpo);
+    }
   }
 }
 
 function renderDepts(){
-  const el=document.getElementById('dept-grid');
-  if(!depts.length){el.innerHTML='<div class="empty">Sem departamentos criados.</div>';return}
+  const el=document.getElementById('dep-grid');
+  if(!depts.length){el.innerHTML='<div class="empty">Sem departamentos.</div>';return}
   el.innerHTML=depts.map(d=>{
-    const count=tickets.filter(t=>t.departamento_id===d.id).length;
-    return`<div class="dept-card">
-      <div class="dept-name">${d.nome}</div>
-      <div class="dept-desc">${d.descricao||'Sem descrição'}</div>
-      <div style="font-size:12px;color:var(--t3);margin-top:6px">${count} problema${count!==1?'s':''}</div>
-      <div class="dept-actions">
-        <button class="bs" style="font-size:12px;padding:5px 10px" onclick="editDept(${d.id})">Editar</button>
-      </div>
+    const n=tickets.filter(t=>t.departamento_id===d.id).length;
+    return`<div class="dc">
+      <div class="dn">${d.nome}</div>
+      <div class="dd">${d.descricao||'Sem descrição'}</div>
+      <div style="font-size:12px;color:var(--t3);margin-bottom:8px">${n} problema${n!==1?'s':''}</div>
+      <button class="bs" style="font-size:12px;padding:5px 10px" onclick="editDept(${d.id})">Editar</button>
     </div>`;
   }).join('');
 }
-
-function openNovoDept(){editDeptId=null;document.getElementById('dept-modal-tit').textContent='Novo departamento';document.getElementById('dept-nome').value='';document.getElementById('dept-desc').value='';document.getElementById('m-dept').style.display='flex'}
-function editDept(id){
-  const d=depts.find(x=>x.id===id);if(!d)return;
-  editDeptId=id;document.getElementById('dept-modal-tit').textContent='Editar departamento';
-  document.getElementById('dept-nome').value=d.nome;document.getElementById('dept-desc').value=d.descricao||'';
-  document.getElementById('m-dept').style.display='flex';
-}
-function closeDept(){document.getElementById('m-dept').style.display='none';editDeptId=null}
-
+function openDept(){editDepId=null;document.getElementById('dep-tit').textContent='Novo departamento';document.getElementById('dep-nome').value='';document.getElementById('dep-desc').value='';document.getElementById('m-dep').style.display='flex'}
+function editDept(id){const d=depts.find(x=>x.id===id);if(!d)return;editDepId=id;document.getElementById('dep-tit').textContent='Editar departamento';document.getElementById('dep-nome').value=d.nome;document.getElementById('dep-desc').value=d.descricao||'';document.getElementById('m-dep').style.display='flex'}
+function closeDept(){document.getElementById('m-dep').style.display='none';editDepId=null}
 async function salvarDept(){
-  const nome=document.getElementById('dept-nome').value.trim();
-  if(!nome){alert('Introduz o nome do departamento.');return}
-  const desc=document.getElementById('dept-desc').value.trim()||null;
-  if(editDeptId){await SB.from('departamentos').update({nome,descricao:desc}).eq('id',editDeptId);toast('Departamento atualizado','success');}
-  else{await SB.from('departamentos').insert({nome,descricao:desc});toast('Departamento criado','success');}
+  const nome=document.getElementById('dep-nome').value.trim();if(!nome){alert('Introduz o nome.');return}
+  const desc=document.getElementById('dep-desc').value.trim()||null;
+  if(editDepId)await SB.from('departamentos').update({nome,descricao:desc}).eq('id',editDepId);
+  else await SB.from('departamentos').insert({nome,descricao:desc});
   closeDept();await loadAll();renderDepts();renderFilters();
+  toast(editDepId?'Departamento atualizado':'Departamento criado','success');
 }
 
 function renderEq(){
   const el=document.getElementById('eq-grid');
-  const colabs=profiles.filter(p=>p.ativo!==false);
-  if(!colabs.length){el.innerHTML='<div class="empty">Sem colaboradores.</div>';return}
-  el.innerHTML=colabs.map((p,i)=>{
+  if(!profiles.length){el.innerHTML='<div class="empty">Sem colaboradores.</div>';return}
+  el.innerHTML=profiles.map((p,i)=>{
     const meus=tickets.filter(t=>t.responsavel_id===p.id);
-    const ab=meus.filter(t=>t.estado==='aberto').length;
-    const ec=meus.filter(t=>t.estado==='em-curso').length;
-    const res=meus.filter(t=>t.estado==='resolvido'||t.estado==='fechado').length;
     const dep=depts.find(d=>d.id===p.departamento_id);
     return`<div class="tkc">
       <div class="tkc-top">
@@ -676,49 +648,41 @@ function renderEq(){
         <div style="flex:1;min-width:0">
           <div class="tn">${p.nome}</div>
           <div class="tro">${p.cargo||''}</div>
-          ${dep?`<span class="badge b-dep" style="font-size:10px;margin-top:4px">${dep.nome}</span>`:''}
-          <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">
-            ${p.email_notif?`<span class="tag-email">✉ ${p.email_notif}</span>`:''}
-            ${p.whatsapp?`<span class="tag-wa">📱 ${p.whatsapp}</span>`:''}
-          </div>
+          ${dep?`<span class="badge b-dep" style="font-size:10px;margin-top:4px;display:inline-block">${dep.nome}</span>`:''}
+          ${p.email_notif?`<div style="font-size:11px;color:var(--t3);margin-top:4px">✉ ${p.email_notif}</div>`:''}
         </div>
       </div>
       <div class="tks">
-        <div class="tks-i"><div class="tsn" style="color:#d97706">${ab}</div><div class="tsl">Abertos</div></div>
-        <div class="tks-i"><div class="tsn" style="color:#185FA5">${ec}</div><div class="tsl">Em curso</div></div>
-        <div class="tks-i"><div class="tsn" style="color:#16a34a">${res}</div><div class="tsl">Resolvidos</div></div>
+        <div class="tks-i"><div class="tsn" style="color:#d97706">${meus.filter(t=>t.estado==='aberto').length}</div><div class="tsl">Abertos</div></div>
+        <div class="tks-i"><div class="tsn" style="color:#185FA5">${meus.filter(t=>t.estado==='em-curso').length}</div><div class="tsl">Em curso</div></div>
+        <div class="tks-i"><div class="tsn" style="color:#16a34a">${meus.filter(t=>t.estado==='resolvido'||t.estado==='fechado').length}</div><div class="tsl">Resolvidos</div></div>
       </div>
     </div>`;
   }).join('');
 }
 
-function openNovoColab(){
+function openColab(){
   document.getElementById('col-dep').innerHTML='<option value="">Sem departamento</option>'+depts.map(d=>`<option value="${d.id}">${d.nome}</option>`).join('');
-  document.getElementById('m-colab').style.display='flex';
+  document.getElementById('m-col').style.display='flex';
 }
-function closeColab(){document.getElementById('m-colab').style.display='none'}
+function closeColab(){document.getElementById('m-col').style.display='none'}
 
 async function criarColab(){
   const nome=document.getElementById('col-nome').value.trim();
   const email=document.getElementById('col-email').value.trim();
   const pass=document.getElementById('col-pass').value.trim();
   const cargo=document.getElementById('col-cargo').value.trim();
-  const wa=document.getElementById('col-wa').value.trim();
   const dep=document.getElementById('col-dep').value||null;
   const role=document.getElementById('col-role').value;
   if(!nome||!email||!pass){alert('Nome, email e password são obrigatórios.');return}
   if(pass.length<6){alert('Password deve ter pelo menos 6 caracteres.');return}
-  // Criar utilizador via sign-up (admin flow)
   const{data,error}=await SB.auth.signUp({email,password:pass,options:{data:{nome,role,cargo}}});
-  if(error){alert('Erro ao criar conta: '+error.message);return}
-  // Atualizar perfil com dados adicionais
+  if(error){alert('Erro: '+error.message);return}
   if(data.user){
-    await SB.from('profiles').upsert({id:data.user.id,nome,cargo,role,whatsapp:wa||null,email_notif:email,departamento_id:dep?parseInt(dep):null});
+    await SB.from('profiles').upsert({id:data.user.id,nome,cargo,role,email_notif:email,departamento_id:dep?parseInt(dep):null,ativo:true});
   }
-  closeColab();
-  document.getElementById('col-nome').value='';document.getElementById('col-email').value='';document.getElementById('col-wa').value='';
-  await loadAll();renderEq();
-  toast(`Colaborador ${nome} criado com sucesso!`,'success');
+  closeColab();await loadAll();renderEq();
+  toast(`Colaborador ${nome} criado!`,'success');
 }
 
 async function loadMsgs(){
@@ -737,7 +701,6 @@ async function loadMsgs(){
   }).join('');
   el.scrollTop=el.scrollHeight;
 }
-
 async function sendMsg(){
   const inp=document.getElementById('chat-in');const txt=inp.value.trim();if(!txt)return;
   await SB.from('mensagens_gerais').insert({autor_id:CU.id,texto:txt});

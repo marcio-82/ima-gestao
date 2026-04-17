@@ -627,6 +627,7 @@ function renderDepts(){
 function openDept(){editDepId=null;document.getElementById('dep-tit').textContent='Novo departamento';document.getElementById('dep-nome').value='';document.getElementById('dep-desc').value='';document.getElementById('m-dep').style.display='flex'}
 function editDept(id){const d=depts.find(x=>x.id===id);if(!d)return;editDepId=id;document.getElementById('dep-tit').textContent='Editar departamento';document.getElementById('dep-nome').value=d.nome;document.getElementById('dep-desc').value=d.descricao||'';document.getElementById('m-dep').style.display='flex'}
 function closeDept(){document.getElementById('m-dep').style.display='none';editDepId=null}
+async function apagarDept(id,nome){if(!confirm('Tens a certeza que queres apagar o departamento "'+nome+'"? Esta ação não pode ser desfeita.'))return;const{error}=await SB.from('departamentos').delete().eq('id',id);if(error){toast('Erro ao apagar: '+error.message,'error');return;}await loadAll();renderDepts();renderFilters();toast('Departamento "'+nome+'" apagado.','success');}
 async function salvarDept(){
   const nome=document.getElementById('dep-nome').value.trim();if(!nome){alert('Introduz o nome.');return}
   const desc=document.getElementById('dep-desc').value.trim()||null;

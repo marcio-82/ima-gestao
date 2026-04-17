@@ -5,158 +5,454 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>IMA Lda — Painel</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="css/style.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--blue:#185FA5;--bl:#E6F1FB;--bd:#0C447C;--bor:#e2e8f0;--bg:#f8fafc;--bg2:#f1f5f9;--t:#0f172a;--t2:#64748b;--t3:#94a3b8;--r:10px;--rl:14px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--t);font-size:14px}
+.app{display:flex;min-height:100vh}
+/* SIDEBAR */
+.sb{width:220px;background:#fff;border-right:1px solid var(--bor);display:flex;flex-direction:column;flex-shrink:0}
+.sb-logo{display:flex;align-items:center;gap:10px;padding:16px;border-bottom:1px solid var(--bor)}
+.logo-mark{width:36px;height:36px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:12px;flex-shrink:0}
+.sb-name{font-size:14px;font-weight:700;color:var(--t)}
+.sb-role{font-size:11px;color:var(--t2)}
+.sb-nav{flex:1;padding:8px;display:flex;flex-direction:column;gap:2px}
+.ni{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:var(--r);color:var(--t2);text-decoration:none;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;border:none;background:none;width:100%;text-align:left}
+.ni:hover,.ni.active{background:var(--bl);color:var(--bd)}
+.nb{background:#ef4444;color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:auto;display:none}
+.sb-foot{padding:12px;border-top:1px solid var(--bor);display:flex;align-items:center;gap:8px}
+.u-info{flex:1;min-width:0}
+.u-name{font-size:13px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.u-cargo{font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn-out{background:none;border:1px solid var(--bor);border-radius:8px;width:30px;height:30px;cursor:pointer;color:var(--t2);font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.btn-out:hover{background:#fef2f2;color:#dc2626;border-color:#fecaca}
+/* MAIN */
+.main{flex:1;overflow-y:auto}
+.sec{display:none;padding:24px;max-width:880px}
+.sec.active{display:block}
+.sec-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:12px}
+.sec-hdr h1{font-size:20px;font-weight:700}
+.sec-desc{font-size:13px;color:var(--t2);margin-top:2px}
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.sc{background:var(--bg2);border-radius:var(--r);padding:14px 16px}
+.sl{font-size:12px;color:var(--t2);margin-bottom:4px}
+.sv{font-size:26px;font-weight:700;color:var(--t)}
+.sv.danger{color:#dc2626}.sv.warn{color:#d97706}.sv.ok{color:#16a34a}
+/* FILTERS */
+.fbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.filters{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.fb{padding:5px 13px;border-radius:20px;border:1px solid var(--bor);background:#fff;font-size:12px;cursor:pointer;color:var(--t2);font-weight:500;transition:all .15s}
+.fb:hover{border-color:var(--blue);color:var(--blue)}
+.fb.active{background:var(--bl);color:var(--bd);border-color:#93c5fd}
+.srch{padding:7px 12px;border:1px solid var(--bor);border-radius:var(--r);font-size:13px;width:170px;background:#fff;color:var(--t)}
+/* TICKETS */
+.tc{background:#fff;border:1px solid var(--bor);border-radius:var(--rl);padding:14px 16px;cursor:pointer;transition:all .15s;margin-bottom:8px}
+.tc:hover{border-color:var(--blue);box-shadow:0 2px 8px rgba(24,95,165,.08)}
+.tt{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.ti{flex:1}
+.tit{font-size:14px;font-weight:600;color:var(--t);margin-bottom:3px}
+.tdesc{font-size:12px;color:var(--t2);line-height:1.4}
+.tmeta{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap}
+.tdate{font-size:11px;color:var(--t3)}
+/* BADGES */
+.badge{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.b-urgente{background:#fef2f2;color:#991b1b}
+.b-alto{background:#fffbeb;color:#92400e}
+.b-medio{background:#eff6ff;color:#1e40af}
+.b-baixo{background:#f0fdf4;color:#166534}
+.b-aberto{background:#fffbeb;color:#92400e}
+.b-em-curso{background:#eff6ff;color:#1e40af}
+.b-resolvido{background:#f0fdf4;color:#166534}
+.b-fechado{background:#f8fafc;color:#64748b}
+.b-cat{background:var(--bg2);color:var(--t2);border:1px solid var(--bor)}
+/* AVATARS */
+.av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.av-sm{width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
+.av-lg{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
+.av-row{display:flex;align-items:center;gap:8px;margin-top:4px}
+.mn{font-size:11px;color:var(--t2)}
+/* FORMS */
+.fg{margin-bottom:14px}
+.fl{display:block;font-size:12px;font-weight:600;color:var(--t2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--bor);border-radius:var(--r);font-size:13px;background:#fff;color:var(--t);font-family:inherit;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(24,95,165,.1)}
+textarea{resize:vertical;min-height:80px;line-height:1.5}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+/* BUTTONS */
+.bp{padding:9px 18px;background:var(--blue);color:#fff;border:none;border-radius:var(--r);font-size:13px;cursor:pointer;font-weight:600;transition:background .15s;white-space:nowrap}
+.bp:hover{background:var(--bd)}
+.bs{padding:9px 18px;background:transparent;border:1px solid var(--bor);border-radius:var(--r);font-size:13px;cursor:pointer;color:var(--t);font-weight:500}
+.bs:hover{background:var(--bg2)}
+/* MODAL */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
+.modal{background:#fff;border-radius:var(--rl);border:1px solid var(--bor);width:100%;max-width:500px;max-height:90vh;overflow-y:auto}
+.modal-lg{max-width:620px}
+.mh{padding:16px 20px;border-bottom:1px solid var(--bor);display:flex;justify-content:space-between;align-items:center;gap:12px}
+.mh h2{font-size:16px;font-weight:700}
+.mc-btn{background:none;border:none;font-size:22px;cursor:pointer;color:var(--t2);padding:2px 6px;border-radius:6px;line-height:1}
+.mc-btn:hover{background:var(--bg2)}
+.mb{padding:20px}
+.mf{padding:14px 20px;border-top:1px solid var(--bor);display:flex;justify-content:flex-end;gap:8px}
+/* DETAIL */
+.df{margin-bottom:14px}
+.dl{font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.dv{font-size:14px;color:var(--t);line-height:1.5}
+.dsub{font-size:12px;color:var(--t2)}
+.drow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.ebtns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;margin-top:6px}
+.br{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+/* MESSAGES */
+.ml{display:flex;flex-direction:column;gap:8px;max-height:200px;overflow-y:auto;padding:2px}
+.mi{background:var(--bg2);border-radius:var(--r);padding:10px 12px}
+.mtop{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.ma{font-size:12px;font-weight:600;color:var(--t)}
+.md{font-size:11px;color:var(--t3)}
+.mt{font-size:13px;color:var(--t2);line-height:1.5}
+.me{font-size:13px;color:var(--t3);padding:8px 0}
+.cir{display:flex;gap:8px;margin-top:10px}
+.cir input{flex:1}
+/* CHAT */
+.chat{background:#fff;border:1px solid var(--bor);border-radius:var(--rl);overflow:hidden;max-width:680px}
+.chat-msgs{padding:16px;display:flex;flex-direction:column;gap:10px;min-height:300px;max-height:500px;overflow-y:auto}
+.cm{display:flex;align-items:flex-end;gap:8px}
+.cm-me{flex-direction:row-reverse}
+.cb{background:var(--bg2);border-radius:12px 12px 12px 3px;padding:9px 13px;max-width:75%}
+.cb-me{background:var(--bl);border-radius:12px 12px 3px 12px}
+.ca{font-size:11px;font-weight:600;color:var(--blue);margin-bottom:2px}
+.ct{font-size:13px;color:var(--t);line-height:1.5}
+.ctime{font-size:10px;color:var(--t3);margin-top:3px;text-align:right}
+.ci-row{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--bor)}
+.ci-row input{flex:1}
+/* TEAM */
+.tgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.tkc{background:#fff;border:1px solid var(--bor);border-radius:var(--rl);padding:16px}
+.tkc-top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.tn{font-size:14px;font-weight:600;color:var(--t)}
+.tro{font-size:12px;color:var(--t2)}
+.tks{display:flex;gap:8px}
+.tks-i{flex:1;text-align:center;background:var(--bg2);border-radius:8px;padding:8px 4px}
+.tsn{font-size:20px;font-weight:700}
+.tsl{font-size:11px;color:var(--t2)}
+.empty{text-align:center;padding:40px;color:var(--t2);background:#fff;border:1px solid var(--bor);border-radius:var(--rl)}
+/* RESPONSIVE */
+@media(max-width:768px){
+  .app{flex-direction:column}
+  .sb{width:100%;flex-direction:row;flex-wrap:wrap;border-right:none;border-bottom:1px solid var(--bor)}
+  .sb-logo{flex:1;padding:12px}
+  .sb-nav{flex-direction:row;padding:8px;width:100%;border-top:1px solid var(--bor);flex:none}
+  .sb-foot{width:100%;padding:8px 12px;border-top:1px solid var(--bor)}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .frow{grid-template-columns:1fr}
+  .sec{padding:16px}
+  .tgrid{grid-template-columns:1fr}
+  .drow{grid-template-columns:1fr}
+  .ni{padding:7px 10px;font-size:12px}
+}
+</style>
 </head>
 <body>
-
-<div class="app-layout">
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="sidebar-logo">
+<div class="app">
+  <aside class="sb">
+    <div class="sb-logo">
       <div class="logo-mark">IMA</div>
       <div>
-        <div class="sidebar-title">IMA Lda</div>
-        <div class="sidebar-sub" id="user-role-label">A carregar...</div>
+        <div class="sb-name">IMA Lda</div>
+        <div class="sb-role" id="u-role">A carregar...</div>
       </div>
     </div>
-    <nav class="sidebar-nav">
-      <a href="#" class="nav-item active" onclick="showSection('tickets')">
-        <span class="nav-icon">◈</span> Problemas
-        <span class="nav-badge" id="badge-abertos"></span>
-      </a>
-      <a href="#" class="nav-item" onclick="showSection('mensagens')">
-        <span class="nav-icon">◉</span> Mensagens
-      </a>
-      <a href="#" class="nav-item" onclick="showSection('equipa')" id="nav-equipa">
-        <span class="nav-icon">◎</span> Equipa
-      </a>
+    <nav class="sb-nav">
+      <button class="ni active" onclick="showSec('tickets')">&#9670; Problemas <span class="nb" id="nbadge"></span></button>
+      <button class="ni" onclick="showSec('mensagens')">&#9673; Mensagens</button>
+      <button class="ni" onclick="showSec('equipa')" id="nav-eq">&#9678; Equipa</button>
     </nav>
-    <div class="sidebar-footer">
-      <div class="user-info">
-        <div class="avatar" id="user-avatar">--</div>
-        <div>
-          <div class="user-name" id="user-name">...</div>
-          <div class="user-cargo" id="user-cargo">...</div>
-        </div>
+    <div class="sb-foot">
+      <div class="av" id="u-av" style="background:#E6F1FB;color:#0C447C">--</div>
+      <div class="u-info">
+        <div class="u-name" id="u-name">...</div>
+        <div class="u-cargo" id="u-cargo">...</div>
       </div>
-      <button class="btn-logout" onclick="logout()" title="Sair">⏻</button>
+      <button class="btn-out" onclick="logout()" title="Sair">&#9211;</button>
     </div>
   </aside>
 
-  <!-- Main content -->
-  <main class="main-content">
-
-    <!-- TICKETS -->
-    <section id="section-tickets" class="section active">
-      <div class="section-header">
-        <div>
-          <h1>Problemas</h1>
-          <p class="section-desc">Regista e acompanha todos os problemas da empresa</p>
-        </div>
-        <button class="btn-primary" onclick="openModalNovo()">+ Novo problema</button>
+  <main class="main">
+    <section class="sec active" id="sec-tickets">
+      <div class="sec-hdr">
+        <div><h1>Problemas</h1><p class="sec-desc">Regista e acompanha todos os problemas da empresa</p></div>
+        <button class="bp" onclick="openNovo()">+ Novo problema</button>
       </div>
-
-      <div class="stats-grid" id="stats-grid"></div>
-
-      <div class="filters-bar">
+      <div class="stats" id="stats"></div>
+      <div class="fbar">
         <div class="filters" id="filters"></div>
-        <input type="text" class="search-input" id="search-input" placeholder="Pesquisar..." oninput="renderTickets()">
+        <input type="text" class="srch" id="srch" placeholder="Pesquisar..." oninput="renderTickets()">
       </div>
-
-      <div id="tickets-list"></div>
+      <div id="tlist"></div>
     </section>
 
-    <!-- MENSAGENS -->
-    <section id="section-mensagens" class="section">
-      <div class="section-header">
-        <div>
-          <h1>Canal da equipa</h1>
-          <p class="section-desc">Comunicação geral da IMA Lda</p>
-        </div>
-      </div>
-      <div class="chat-container">
-        <div class="chat-messages" id="chat-messages"></div>
-        <div class="chat-input-row">
-          <input type="text" class="form-input" id="chat-input" placeholder="Escrever mensagem..." onkeydown="if(event.key==='Enter')enviarMsgGeral()">
-          <button class="btn-primary" onclick="enviarMsgGeral()">Enviar</button>
+    <section class="sec" id="sec-mensagens">
+      <div class="sec-hdr"><div><h1>Canal da equipa</h1><p class="sec-desc">Comunicação geral da IMA Lda</p></div></div>
+      <div class="chat">
+        <div class="chat-msgs" id="chat-msgs"></div>
+        <div class="ci-row">
+          <input type="text" id="chat-in" placeholder="Escrever mensagem..." onkeydown="if(event.key==='Enter')sendMsg()">
+          <button class="bp" onclick="sendMsg()">Enviar</button>
         </div>
       </div>
     </section>
 
-    <!-- EQUIPA -->
-    <section id="section-equipa" class="section">
-      <div class="section-header">
-        <div>
-          <h1>Equipa</h1>
-          <p class="section-desc">Visão geral dos colaboradores e problemas atribuídos</p>
-        </div>
-      </div>
-      <div id="equipa-grid"></div>
+    <section class="sec" id="sec-equipa">
+      <div class="sec-hdr"><div><h1>Equipa</h1><p class="sec-desc">Resumo de problemas por colaborador</p></div></div>
+      <div class="tgrid" id="eq-grid"></div>
     </section>
-
   </main>
 </div>
 
-<!-- MODAL NOVO TICKET -->
-<div class="modal-overlay" id="modal-novo" style="display:none" onclick="closeModalNovo(event)">
+<!-- MODAL NOVO -->
+<div class="mo" id="m-novo" style="display:none" onclick="if(event.target.id==='m-novo')closeNovo()">
   <div class="modal">
-    <div class="modal-header">
-      <h2>Registar novo problema</h2>
-      <button class="modal-close" onclick="closeModalNovoBtn()">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label class="form-label">Título do problema *</label>
-        <input type="text" class="form-input" id="novo-titulo" placeholder="Descreva brevemente o problema">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Descrição detalhada</label>
-        <textarea class="form-textarea" id="novo-desc" placeholder="O que aconteceu? Quando? Onde? Qual o impacto?"></textarea>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Categoria</label>
-          <select class="form-select" id="novo-categoria">
-            <option value="Manutenção">Manutenção</option>
-            <option value="Comercial">Comercial</option>
-            <option value="Administrativo">Administrativo</option>
-            <option value="Logística">Logística</option>
-          </select>
+    <div class="mh"><h2>Registar novo problema</h2><button class="mc-btn" onclick="closeNovo()">&#215;</button></div>
+    <div class="mb">
+      <div class="fg"><label class="fl">Título *</label><input type="text" id="n-tit" placeholder="Descreva brevemente o problema"></div>
+      <div class="fg"><label class="fl">Descrição</label><textarea id="n-desc" placeholder="O que aconteceu? Quando? Onde? Qual o impacto?"></textarea></div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Categoria</label>
+          <select id="n-cat"><option value="Manutenção">Manutenção</option><option value="Comercial">Comercial</option><option value="Administrativo">Administrativo</option><option value="Logística">Logística</option></select>
         </div>
-        <div class="form-group">
-          <label class="form-label">Prioridade</label>
-          <select class="form-select" id="novo-prioridade">
-            <option value="baixo">Baixo</option>
-            <option value="medio" selected>Médio</option>
-            <option value="alto">Alto</option>
-            <option value="urgente">Urgente</option>
-          </select>
+        <div class="fg"><label class="fl">Prioridade</label>
+          <select id="n-pri"><option value="baixo">Baixo</option><option value="medio" selected>Médio</option><option value="alto">Alto</option><option value="urgente">Urgente</option></select>
         </div>
       </div>
-      <div class="form-group" id="campo-responsavel">
-        <label class="form-label">Responsável</label>
-        <select class="form-select" id="novo-responsavel"></select>
-      </div>
+      <div class="fg" id="campo-resp"><label class="fl">Responsável</label><select id="n-resp"></select></div>
     </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" onclick="closeModalNovoBtn()">Cancelar</button>
-      <button class="btn-primary" onclick="criarTicket()">Registar problema</button>
-    </div>
+    <div class="mf"><button class="bs" onclick="closeNovo()">Cancelar</button><button class="bp" onclick="criarTicket()">Registar problema</button></div>
   </div>
 </div>
 
-<!-- MODAL DETALHE TICKET -->
-<div class="modal-overlay" id="modal-detalhe" style="display:none" onclick="closeModalDetalhe(event)">
+<!-- MODAL DETALHE -->
+<div class="mo" id="m-det" style="display:none" onclick="if(event.target.id==='m-det')closeDet()">
   <div class="modal modal-lg">
-    <div class="modal-header">
-      <h2 id="detalhe-titulo">-</h2>
-      <button class="modal-close" onclick="closeModalDetalheBtn()">×</button>
-    </div>
-    <div class="modal-body" id="detalhe-body"></div>
+    <div class="mh"><h2 id="det-tit">-</h2><button class="mc-btn" onclick="closeDet()">&#215;</button></div>
+    <div class="mb" id="det-body"></div>
   </div>
 </div>
 
-<script src="js/supabase.js"></script>
-<script src="js/app.js"></script>
+<script>
+const SB_URL='https://wvmprizthrcxmvkkoiyu.supabase.co';
+const SB_KEY='sb_publishable_9VegElC1LK6TxZzhXRrfIA_3vFkTVrj';
+const _sb=supabase.createClient(SB_URL,SB_KEY);
+
+let CU=null,CP=null,profiles=[],tickets=[],filter='todos',detId=null;
+const AVC=['#E6F1FB|#0C447C','#E1F5EE|#0F6E56','#FAECE7|#993C1D','#EEEDFE|#3C3489','#FAEEDA|#633806'];
+
+function ac(i){const c=AVC[((i||0)%AVC.length+AVC.length)%AVC.length].split('|');return `background:${c[0]};color:${c[1]}`}
+function ini(n){if(!n)return'??';const p=n.trim().split(' ');return p.length>=2?(p[0][0]+p[p.length-1][0]).toUpperCase():n.slice(0,2).toUpperCase()}
+function fd(dt){const d=new Date(dt);return`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
+function cap(s){return s?s.charAt(0).toUpperCase()+s.slice(1):''}
+
+async function init(){
+  const{data:{session}}=await _sb.auth.getSession();
+  if(!session)return location.href='index.html';
+  CU=session.user;
+  const{data:p}=await _sb.from('profiles').select('*').eq('id',CU.id).single();
+  CP=p;
+  document.getElementById('u-name').textContent=p?.nome||CU.email;
+  document.getElementById('u-cargo').textContent=p?.cargo||'';
+  document.getElementById('u-role').textContent=p?.role==='gestor'?'Diretor Geral':'Colaborador';
+  document.getElementById('u-av').textContent=ini(p?.nome||'');
+  document.getElementById('u-av').style.cssText=ac(0);
+  if(p?.role!=='gestor')document.getElementById('nav-eq').style.display='none';
+  await loadAll();
+  renderStats();renderFilters();renderTickets();
+  subscribe();
+}
+
+async function loadAll(){
+  const[{data:pr},{data:tk}]=await Promise.all([
+    _sb.from('profiles').select('*').order('nome'),
+    _sb.from('tickets').select('*,responsavel:profiles!tickets_responsavel_id_fkey(id,nome,cargo),criador:profiles!tickets_criado_por_fkey(id,nome)').order('created_at',{ascending:false})
+  ]);
+  profiles=pr||[];tickets=tk||[];
+  const ab=tickets.filter(t=>t.estado==='aberto'||t.estado==='em-curso').length;
+  const nb=document.getElementById('nbadge');
+  nb.textContent=ab||'';nb.style.display=ab>0?'inline-flex':'none';
+}
+
+function subscribe(){
+  _sb.channel('tk').on('postgres_changes',{event:'*',schema:'public',table:'tickets'},async()=>{await loadAll();renderStats();renderTickets();}).subscribe();
+  _sb.channel('mg').on('postgres_changes',{event:'INSERT',schema:'public',table:'mensagens_gerais'},()=>{if(document.getElementById('sec-mensagens').classList.contains('active'))loadMsgs();}).subscribe();
+  _sb.channel('mt').on('postgres_changes',{event:'INSERT',schema:'public',table:'mensagens_ticket'},(pl)=>{if(detId&&pl.new.ticket_id==detId)loadMsgsTk(detId);}).subscribe();
+}
+
+function renderStats(){
+  const ab=tickets.filter(t=>t.estado==='aberto').length;
+  const ec=tickets.filter(t=>t.estado==='em-curso').length;
+  const res=tickets.filter(t=>t.estado==='resolvido').length;
+  const urg=tickets.filter(t=>t.prioridade==='urgente'&&t.estado!=='fechado'&&t.estado!=='resolvido').length;
+  document.getElementById('stats').innerHTML=`
+    <div class="sc"><div class="sl">Em aberto</div><div class="sv${ab>0?' warn':''}">${ab}</div></div>
+    <div class="sc"><div class="sl">Em curso</div><div class="sv">${ec}</div></div>
+    <div class="sc"><div class="sl">Resolvidos</div><div class="sv ok">${res}</div></div>
+    <div class="sc"><div class="sl">Urgentes</div><div class="sv${urg>0?' danger':''}">${urg}</div></div>`;
+}
+
+function renderFilters(){
+  const items=['todos','aberto','em-curso','resolvido','urgente','Manutenção','Comercial','Administrativo','Logística'];
+  document.getElementById('filters').innerHTML=items.map(f=>`<button class="fb${filter===f?' active':''}" onclick="setFilter('${f}')">${f==='todos'?'Todos':cap(f)}</button>`).join('');
+}
+
+function setFilter(f){filter=f;renderFilters();renderTickets()}
+
+function renderTickets(){
+  const srch=(document.getElementById('srch')?.value||'').toLowerCase();
+  let list=tickets;
+  if(filter!=='todos')list=list.filter(t=>t.estado===filter||t.prioridade===filter||t.categoria===filter);
+  if(srch)list=list.filter(t=>t.titulo.toLowerCase().includes(srch)||(t.descricao||'').toLowerCase().includes(srch));
+  if(CP?.role!=='gestor')list=list.filter(t=>t.responsavel_id===CP.id||t.criado_por===CP.id);
+  const el=document.getElementById('tlist');
+  if(!list.length){el.innerHTML='<div class="empty">Nenhum problema encontrado.</div>';return}
+  el.innerHTML=list.map(t=>{
+    const r=t.responsavel;const ri=profiles.findIndex(p=>p.id===r?.id);
+    return`<div class="tc" onclick="abrirTicket(${t.id})">
+      <div class="tt">
+        <div class="ti">
+          <div class="tit">${t.titulo}</div>
+          <div class="tdesc">${(t.descricao||'').length>90?(t.descricao||'').slice(0,90)+'...':(t.descricao||'Sem descrição.')}</div>
+          <div class="tmeta">
+            <span class="badge b-${t.prioridade}">${cap(t.prioridade)}</span>
+            <span class="badge b-${t.estado}">${cap(t.estado).replace('-',' ')}</span>
+            <span class="badge b-cat">${t.categoria||''}</span>
+            ${r?`<span class="av-sm" style="${ac(ri)}">${ini(r.nome)}</span><span class="mn">${r.nome.split(' ')[0]}</span>`:''}
+          </div>
+        </div>
+        <span class="tdate">${fd(t.created_at)}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function abrirTicket(id){
+  detId=id;
+  const t=tickets.find(x=>x.id===id);if(!t)return;
+  const r=t.responsavel;const ri=profiles.findIndex(p=>p.id===r?.id);
+  const isG=CP?.role==='gestor';
+  document.getElementById('det-tit').textContent=t.titulo;
+  document.getElementById('det-body').innerHTML=`
+    <div class="br">
+      <span class="badge b-${t.prioridade}">${cap(t.prioridade)}</span>
+      <span class="badge b-${t.estado}">${cap(t.estado).replace('-',' ')}</span>
+      <span class="badge b-cat">${t.categoria||''}</span>
+    </div>
+    <div class="df"><div class="dl">Descrição</div><div class="dv" style="color:var(--t2);font-size:13px">${t.descricao||'Sem descrição adicional.'}</div></div>
+    <div class="drow">
+      <div class="df"><div class="dl">Responsável</div><div class="av-row">${r?`<span class="av-sm" style="${ac(ri)}">${ini(r.nome)}</span><div><div class="dv">${r.nome}</div><div class="dsub">${r.cargo||''}</div></div>`:'<span class="dv">Não atribuído</span>'}</div></div>
+      <div class="df"><div class="dl">Registado em</div><div class="dv">${fd(t.created_at)}</div></div>
+    </div>
+    ${isG?`<div class="dl">Atualizar estado</div><div class="ebtns">${['aberto','em-curso','resolvido','fechado'].map(s=>`<button class="fb${t.estado===s?' active':''}" onclick="mudarEstado(${t.id},'${s}')">${cap(s).replace('-',' ')}</button>`).join('')}</div>`:''}
+    <div class="dl" style="margin-top:14px;margin-bottom:6px">Mensagens</div>
+    <div class="ml" id="msgs-tk"></div>
+    <div class="cir">
+      <input type="text" id="msg-in" placeholder="Adicionar atualização..." onkeydown="if(event.key==='Enter')sendMsgTk(${id})">
+      <button class="bp" onclick="sendMsgTk(${id})">Enviar</button>
+    </div>`;
+  document.getElementById('m-det').style.display='flex';
+  await loadMsgsTk(id);
+}
+
+async function loadMsgsTk(id){
+  const{data}=await _sb.from('mensagens_ticket').select('*,autor:profiles(id,nome)').eq('ticket_id',id).order('created_at');
+  const el=document.getElementById('msgs-tk');if(!el)return;
+  if(!data||!data.length){el.innerHTML='<div class="me">Sem atualizações ainda.</div>';return}
+  el.innerHTML=data.map(m=>{
+    const ai=profiles.findIndex(p=>p.id===m.autor?.id);
+    return`<div class="mi"><div class="mtop"><div class="av-row"><span class="av-sm" style="${ac(ai)}">${ini(m.autor?.nome||'?')}</span><span class="ma">${m.autor?.nome||'?'}</span></div><span class="md">${fd(m.created_at)}</span></div><div class="mt">${m.texto}</div></div>`;
+  }).join('');
+  el.scrollTop=el.scrollHeight;
+}
+
+async function sendMsgTk(id){
+  const inp=document.getElementById('msg-in');const txt=inp.value.trim();if(!txt)return;
+  await _sb.from('mensagens_ticket').insert({ticket_id:id,autor_id:CU.id,texto:txt});
+  inp.value='';await loadMsgsTk(id);
+}
+
+async function mudarEstado(id,estado){
+  await _sb.from('tickets').update({estado}).eq('id',id);
+  await loadAll();renderStats();renderTickets();await abrirTicket(id);
+}
+
+function openNovo(){
+  document.getElementById('n-resp').innerHTML=profiles.map(p=>`<option value="${p.id}">${p.nome} — ${p.cargo||''}</option>`).join('');
+  document.getElementById('campo-resp').style.display=CP?.role==='gestor'?'block':'none';
+  document.getElementById('m-novo').style.display='flex';
+}
+
+async function criarTicket(){
+  const titulo=document.getElementById('n-tit').value.trim();
+  if(!titulo){alert('Introduz o título do problema.');return}
+  const resp_id=CP?.role==='gestor'?document.getElementById('n-resp').value:CP.id;
+  const{error}=await _sb.from('tickets').insert({titulo,descricao:document.getElementById('n-desc').value.trim()||null,prioridade:document.getElementById('n-pri').value,categoria:document.getElementById('n-cat').value,estado:'aberto',responsavel_id:resp_id,criado_por:CU.id});
+  if(error){alert('Erro: '+error.message);return}
+  closeNovo();document.getElementById('n-tit').value='';document.getElementById('n-desc').value='';
+  await loadAll();renderStats();renderTickets();
+}
+
+async function loadMsgs(){
+  const{data}=await _sb.from('mensagens_gerais').select('*,autor:profiles(id,nome)').order('created_at').limit(100);
+  const el=document.getElementById('chat-msgs');if(!el)return;
+  el.innerHTML=(data||[]).map(m=>{
+    const ai=profiles.findIndex(p=>p.id===m.autor?.id);const me=m.autor?.id===CU.id;
+    return`<div class="cm${me?' cm-me':''}">
+      ${!me?`<span class="av-sm" style="${ac(ai)}">${ini(m.autor?.nome||'?')}</span>`:''}
+      <div class="cb${me?' cb-me':''}">
+        ${!me?`<div class="ca">${m.autor?.nome||'?'}</div>`:''}
+        <div class="ct">${m.texto}</div>
+        <div class="ctime">${fd(m.created_at)}</div>
+      </div>
+    </div>`;
+  }).join('');
+  el.scrollTop=el.scrollHeight;
+}
+
+async function sendMsg(){
+  const inp=document.getElementById('chat-in');const txt=inp.value.trim();if(!txt)return;
+  await _sb.from('mensagens_gerais').insert({autor_id:CU.id,texto:txt});
+  inp.value='';await loadMsgs();
+}
+
+function renderEq(){
+  document.getElementById('eq-grid').innerHTML=profiles.map((p,i)=>{
+    const meus=tickets.filter(t=>t.responsavel_id===p.id);
+    const ab=meus.filter(t=>t.estado==='aberto').length;
+    const ec=meus.filter(t=>t.estado==='em-curso').length;
+    const res=meus.filter(t=>t.estado==='resolvido'||t.estado==='fechado').length;
+    return`<div class="tkc">
+      <div class="tkc-top"><div class="av-lg" style="${ac(i)}">${ini(p.nome)}</div><div><div class="tn">${p.nome}</div><div class="tro">${p.cargo||''}</div></div></div>
+      <div class="tks">
+        <div class="tks-i"><div class="tsn" style="color:#d97706">${ab}</div><div class="tsl">Abertos</div></div>
+        <div class="tks-i"><div class="tsn" style="color:#185FA5">${ec}</div><div class="tsl">Em curso</div></div>
+        <div class="tks-i"><div class="tsn" style="color:#16a34a">${res}</div><div class="tsl">Resolvidos</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showSec(n){
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sec-'+n).classList.add('active');
+  const map={tickets:0,mensagens:1,equipa:2};
+  const btns=document.querySelectorAll('.ni');
+  if(btns[map[n]])btns[map[n]].classList.add('active');
+  if(n==='mensagens')loadMsgs();
+  if(n==='equipa')renderEq();
+}
+
+function closeNovo(){document.getElementById('m-novo').style.display='none'}
+function closeDet(){document.getElementById('m-det').style.display='none';detId=null}
+async function logout(){await _sb.auth.signOut();location.href='index.html'}
+
+init();
+</script>
 </body>
 </html>

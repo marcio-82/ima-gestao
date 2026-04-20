@@ -364,7 +364,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.5}
 
 <script>
 const SB=supabase.createClient('https://wvmprizthrcxmvkkoiyu.supabase.co','sb_publishable_9VegElC1LK6TxZzhXRrfIA_3vFkTVrj');
-const EMAIL_FN='https://wvmprizthrcxmvkkoiyu.supabase.co/functions/v1/send-email';
+const EMAIL_FN='https://wvmprizthrcxmvkkoiyu.supabase.co/functions/v1/dynamic-responder';
 
 let CU=null,CP=null,profiles=[],tickets=[],depts=[],avisos=[];
 let filter='todos',detId=null,editDepId=null;
@@ -384,14 +384,33 @@ function toast(msg,tipo='info'){
 
 async function enviarEmail(para,assunto,corpo){
   try{
-    const dest=Array.isArray(para)?para:[para];
+    const dest=[...(Array.isArray(para)?para:[para])].filter(Boolean);
+    if(!dest.length)return false;
     const r=await fetch(EMAIL_FN,{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer sb_publishable_9VegElC1LK6TxZzhXRrfIA_3vFkTVrj'},
       body:JSON.stringify({para:dest,assunto,corpo})
     });
+    if(!r.ok)console.error('Email HTTP error:',r.status);
     return r.ok;
   }catch(e){console.error('Email err:',e);return false;}
+}
+
+// Envia notificação a todos os envolvidos numa tarefa (responsável + criador), excluindo quem fez a ação
+async function notificarEnvolvidos(t, assunto, corpo, excluirId=null){
+  if(!t)return;
+  const emails=new Set();
+  // Responsável
+  const resp=profiles.find(p=>p.id===t.responsavel_id);
+  if(resp?.email_notif && resp.id!==excluirId) emails.add(resp.email_notif);
+  // Criador
+  const criador=profiles.find(p=>p.id===t.criado_por);
+  if(criador?.email_notif && criador.id!==excluirId) emails.add(criador.email_notif);
+  // Gestor — recebe sempre exceto se for ele a fazer a ação
+  const gestor=profiles.find(p=>p.role==='gestor');
+  if(gestor?.email_notif && gestor.id!==excluirId) emails.add(gestor.email_notif);
+  const lista=[...emails];
+  if(lista.length) await enviarEmail(lista,assunto,corpo);
 }
 
 async function init(){
@@ -528,23 +547,27 @@ async function sendMsgTk(id){
   const inp=document.getElementById('msg-in');const txt=inp.value.trim();if(!txt)return;
   await SB.from('mensagens_ticket').insert({ticket_id:id,autor_id:CU.id,texto:txt});
   inp.value='';await loadMsgsTk(id);
-  // Notificar responsável quando alguém adiciona mensagem
   const t=tickets.find(x=>x.id===id);
-  if(t?.responsavel?.email_notif&&t.responsavel_id!==CU.id){
-    const assunto=`[IMA] Nova atualização: ${t.titulo}`;
-    const corpo=`<p><strong>${CP?.nome||'Utilizador'}</strong> adicionou uma atualização ao problema <strong>"${t.titulo}"</strong>:</p><blockquote style="border-left:3px solid #185FA5;padding-left:12px;color:#64748b;margin:12px 0">${txt}</blockquote><p><a href="https://ima-gestao.vercel.app/app.html" style="background:#185FA5;color:#fff;padding:8px 16px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:8px">Ver no sistema</a></p>`;
-    enviarEmail(t.responsavel.email_notif,assunto,corpo);
-  }
+  if(!t)return;
+  const assunto=`[IMA] Novo comentário: ${t.titulo}`;
+  const corpo=`<p><strong>${CP?.nome||'Utilizador'}</strong> adicionou um comentário ao problema <strong>"${t.titulo}"</strong>:</p>
+<blockquote style="border-left:3px solid #185FA5;padding-left:12px;color:#64748b;margin:12px 0;font-style:italic">${txt}</blockquote>
+<p><a href="https://ima-gestao.vercel.app/app.html" style="background:#185FA5;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:8px;font-weight:600">Ver no sistema →</a></p>`;
+  notificarEnvolvidos(t, assunto, corpo, CU.id);
 }
 
 async function mudarEstado(id,estado){
   await SB.from('tickets').update({estado}).eq('id',id);
   const t=tickets.find(x=>x.id===id);
-  if(t?.responsavel?.email_notif&&t.responsavel_id!==CU.id){
+  if(t){
     const lbl=cap(estado).replace('-',' ');
-    const assunto=`[IMA] Problema atualizado: ${t.titulo}`;
-    const corpo=`<p>O estado do problema <strong>"${t.titulo}"</strong> foi alterado para <strong>${lbl}</strong>.</p><p style="color:#64748b">Alterado por: ${CP?.nome||'Gestor'}</p><p><a href="https://ima-gestao.vercel.app/app.html" style="background:#185FA5;color:#fff;padding:8px 16px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:8px">Ver no sistema</a></p>`;
-    enviarEmail(t.responsavel.email_notif,assunto,corpo);
+    const cor=estado==='resolvido'?'#16a34a':estado==='em-curso'?'#185FA5':estado==='fechado'?'#64748b':'#d97706';
+    const assunto=`[IMA] Estado atualizado: ${t.titulo}`;
+    const corpo=`<p>O estado do problema <strong>"${t.titulo}"</strong> foi alterado para:</p>
+<p style="font-size:18px;font-weight:700;color:${cor};margin:12px 0">${lbl}</p>
+<p style="color:#64748b">Alterado por: <strong>${CP?.nome||'Gestor'}</strong></p>
+<p><a href="https://ima-gestao.vercel.app/app.html" style="background:#185FA5;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:8px;font-weight:600">Ver no sistema →</a></p>`;
+    notificarEnvolvidos(t, assunto, corpo, CU.id);
   }
   await loadAll();renderStats();renderTickets();await abrirTicket(id);
   toast(`Estado alterado para "${cap(estado).replace('-',' ')}"`, 'success');
@@ -576,13 +599,23 @@ async function criarTicket(){
   closeNovo();document.getElementById('n-tit').value='';document.getElementById('n-desc').value='';
   await loadAll();renderStats();renderTickets();
   toast('Problema registado!','success');
-  if(notif&&resp_id!==CU.id){
+  if(notif){
     const resp=profiles.find(p=>p.id===resp_id);
+    const pri=document.getElementById('n-pri').value;
+    const desc=document.getElementById('n-desc').value.trim();
     if(resp?.email_notif){
-      const pri=document.getElementById('n-pri').value;
-      const assunto=`[IMA] Novo problema atribuído: ${titulo}`;
-      const corpo=`<p>Olá <strong>${resp.nome}</strong>,</p><p>Foi-te atribuído um novo problema: <strong>"${titulo}"</strong></p><p>Prioridade: <strong>${cap(pri)}</strong></p><p><a href="https://ima-gestao.vercel.app/app.html" style="background:#185FA5;color:#fff;padding:8px 16px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:8px">Ver no sistema</a></p>`;
-      enviarEmail(resp.email_notif,assunto,corpo);
+      const corPri=pri==='urgente'?'#dc2626':pri==='alto'?'#d97706':pri==='medio'?'#185FA5':'#16a34a';
+      const assunto=`[IMA] Novo problema atribuído a ti: ${titulo}`;
+      const corpo=`<p>Olá <strong>${resp.nome}</strong>,</p>
+<p>Foi-te atribuído um novo problema:</p>
+<div style="background:#f8fafc;border-left:4px solid ${corPri};padding:14px 16px;border-radius:0 8px 8px 0;margin:12px 0">
+  <p style="font-size:16px;font-weight:700;color:#0f172a;margin:0 0 6px">${titulo}</p>
+  ${desc?`<p style="color:#64748b;margin:0 0 8px">${desc}</p>`:''}
+  <p style="margin:0"><span style="background:${corPri};color:#fff;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600">${cap(pri)}</span></p>
+</div>
+<p>Acede ao sistema para ver os detalhes e adicionar atualizações.</p>
+<p><a href="https://ima-gestao.vercel.app/app.html" style="background:#185FA5;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:4px;font-weight:600">Ver no sistema →</a></p>`;
+      enviarEmail(resp.email_notif, assunto, corpo);
     }
   }
 }

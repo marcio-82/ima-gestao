@@ -503,6 +503,7 @@ async function abrirTicket(id){
   detId=id;const t=tickets.find(x=>x.id===id);if(!t)return;
   const r=t.responsavel;const ri=profiles.findIndex(p=>p.id===r?.id);
   const isG=CP?.role==='gestor';
+  const respOptions=profiles.filter(p=>p.ativo!==false).map(p=>`<option value="${p.id}"${p.id===t.responsavel_id?' selected':''}>${p.nome}${p.cargo?' — '+p.cargo:''}</option>`).join('');
   document.getElementById('det-tit').textContent=t.titulo;
   document.getElementById('det-body').innerHTML=`
     <div class="br">
@@ -513,16 +514,18 @@ async function abrirTicket(id){
     </div>
     <div class="df"><div class="dl">Descrição</div><div class="dv" style="color:var(--t2);font-size:13px;line-height:1.6">${t.descricao||'Sem descrição adicional.'}</div></div>
     <div class="drow">
-      <div class="df"><div class="dl">Responsável</div><div class="av-row">${r?`<span class="av-sm" style="${ac(ri)}">${ini(r.nome)}</span><div><div class="dv">${r.nome}</div><div class="dsub">${r.cargo||''}</div></div>`:'<span class="dv">Não atribuído</span>'}</div></div>
+      <div class="df">
+        <div class="dl">Responsável</div>
+        <select id="det-resp" style="margin-top:4px;font-size:13px" onchange="mudarResponsavel(${t.id},this.value)">${respOptions}</select>
+      </div>
       <div class="df"><div class="dl">Registado em</div><div class="dv">${fd(t.created_at)}</div></div>
     </div>
-    ${isG?`
     <div class="dl">Atualizar estado</div>
     <div class="ebtns">${['aberto','em-curso','resolvido','fechado'].map(s=>`<button class="fb${t.estado===s?' active':''}" onclick="mudarEstado(${t.id},'${s}')">${cap(s).replace('-',' ')}</button>`).join('')}</div>
     <div style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap">
       <button class="bp bp-sm" onclick="notifManual(${t.id})">✉ Notificar por email</button>
-      ${(t.estado==='resolvido'||t.estado==='fechado')?`<button class="bp bp-sm" style="background:#dc2626" onclick="eliminarTicket(${t.id})">🗑 Eliminar tarefa</button>`:''}
-    </div>`:''}
+      ${isG&&(t.estado==='resolvido'||t.estado==='fechado')?`<button class="bp bp-sm" style="background:#dc2626" onclick="eliminarTicket(${t.id})">🗑 Eliminar tarefa</button>`:''}
+    </div>
     <div class="dl" style="margin-bottom:6px">Mensagens & Atualizações</div>
     <div class="ml" id="msgs-tk"></div>
     <div class="cir">
@@ -584,6 +587,33 @@ async function mudarEstado(id,estado){
   }
   renderStats();renderTickets();await abrirTicket(id);
   toast(`Estado alterado para "${cap(estado).replace('-',' ')}"`, 'success');
+}
+
+async function mudarResponsavel(id,novoRespId){
+  if(!novoRespId)return;
+  await SB.from('tickets').update({responsavel_id:novoRespId}).eq('id',id);
+  await loadAll();
+  const t=tickets.find(x=>x.id===id);
+  const novoResp=profiles.find(p=>p.id===novoRespId);
+  if(t&&novoResp){
+    const assunto=`[IMA] 👤 Tarefa atribuída a ti: ${t.titulo}`;
+    const corpo=`
+<p>Olá <strong>${novoResp.nome}</strong>,</p>
+<p>Foi-te atribuída uma tarefa:</p>
+<div style="background:#f8fafc;border-left:4px solid #185FA5;padding:14px 16px;border-radius:0 8px 8px 0;margin:12px 0">
+  <p style="font-weight:700;color:#0f172a;margin:0 0 6px">${t.titulo}</p>
+  <p style="color:#64748b;margin:0">Atribuído por: <strong>${CP?.nome||'Sistema'}</strong></p>
+</div>
+<p><a href="https://ima-gestao.vercel.app/app.html" style="background:#185FA5;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:4px;font-weight:600">Ver no sistema →</a></p>`;
+    // Notificar novo responsável + gestor
+    const emails=new Set();
+    if(novoResp.email_notif) emails.add(novoResp.email_notif);
+    const gestor=profiles.find(p=>p.role==='gestor');
+    if(gestor?.email_notif) emails.add(gestor.email_notif);
+    if([...emails].length) enviarEmail([...emails],assunto,corpo);
+    toast(`Responsável alterado para ${novoResp.nome}`,'success');
+  }
+  renderTickets();
 }
 
 async function notifManual(id){

@@ -396,21 +396,22 @@ async function enviarEmail(para,assunto,corpo){
   }catch(e){console.error('Email err:',e);return false;}
 }
 
-// Envia notificação a todos os envolvidos numa tarefa (responsável + criador), excluindo quem fez a ação
-async function notificarEnvolvidos(t, assunto, corpo, excluirId=null){
+// Envia notificação a TODOS os envolvidos numa tarefa — sempre, sem excepções
+async function notificarEnvolvidos(t, assunto, corpo){
   if(!t)return;
   const emails=new Set();
   // Responsável
   const resp=profiles.find(p=>p.id===t.responsavel_id);
-  if(resp?.email_notif && resp.id!==excluirId) emails.add(resp.email_notif);
+  if(resp?.email_notif) emails.add(resp.email_notif);
   // Criador
   const criador=profiles.find(p=>p.id===t.criado_por);
-  if(criador?.email_notif && criador.id!==excluirId) emails.add(criador.email_notif);
-  // Gestor — recebe sempre exceto se for ele a fazer a ação
+  if(criador?.email_notif) emails.add(criador.email_notif);
+  // Gestor recebe sempre
   const gestor=profiles.find(p=>p.role==='gestor');
-  if(gestor?.email_notif && gestor.id!==excluirId) emails.add(gestor.email_notif);
+  if(gestor?.email_notif) emails.add(gestor.email_notif);
   const lista=[...emails];
-  if(lista.length) await enviarEmail(lista,assunto,corpo);
+  console.log('Notificar emails:', lista);
+  if(lista.length) await enviarEmail(lista, assunto, corpo);
 }
 
 async function init(){
@@ -549,27 +550,39 @@ async function sendMsgTk(id){
   inp.value='';await loadMsgsTk(id);
   const t=tickets.find(x=>x.id===id);
   if(!t)return;
-  const assunto=`[IMA] Novo comentário: ${t.titulo}`;
-  const corpo=`<p><strong>${CP?.nome||'Utilizador'}</strong> adicionou um comentário ao problema <strong>"${t.titulo}"</strong>:</p>
-<blockquote style="border-left:3px solid #185FA5;padding-left:12px;color:#64748b;margin:12px 0;font-style:italic">${txt}</blockquote>
-<p><a href="https://ima-gestao.vercel.app/app.html" style="background:#185FA5;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:8px;font-weight:600">Ver no sistema →</a></p>`;
-  notificarEnvolvidos(t, assunto, corpo, CU.id);
+  const assunto=`[IMA] 💬 Novo comentário: ${t.titulo}`;
+  const corpo=`
+<p>Olá,</p>
+<p><strong>${CP?.nome||'Utilizador'}</strong> adicionou um comentário ao problema:</p>
+<div style="background:#f8fafc;border-left:4px solid #185FA5;padding:14px 16px;border-radius:0 8px 8px 0;margin:12px 0">
+  <p style="font-weight:700;color:#0f172a;margin:0 0 8px">${t.titulo}</p>
+  <p style="color:#64748b;margin:0;font-style:italic">"${txt}"</p>
+</div>
+<p><a href="https://ima-gestao.vercel.app/app.html" style="background:#185FA5;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:4px;font-weight:600">Ver no sistema →</a></p>`;
+  notificarEnvolvidos(t, assunto, corpo);
 }
 
 async function mudarEstado(id,estado){
   await SB.from('tickets').update({estado}).eq('id',id);
+  await loadAll();
   const t=tickets.find(x=>x.id===id);
   if(t){
     const lbl=cap(estado).replace('-',' ');
     const cor=estado==='resolvido'?'#16a34a':estado==='em-curso'?'#185FA5':estado==='fechado'?'#64748b':'#d97706';
-    const assunto=`[IMA] Estado atualizado: ${t.titulo}`;
-    const corpo=`<p>O estado do problema <strong>"${t.titulo}"</strong> foi alterado para:</p>
-<p style="font-size:18px;font-weight:700;color:${cor};margin:12px 0">${lbl}</p>
+    const emoji=estado==='resolvido'?'✅':estado==='em-curso'?'🔄':estado==='fechado'?'🔒':'📋';
+    const assunto=`[IMA] ${emoji} Estado alterado: ${t.titulo}`;
+    const corpo=`
+<p>Olá,</p>
+<p>O estado do problema foi atualizado:</p>
+<div style="background:#f8fafc;border-left:4px solid ${cor};padding:14px 16px;border-radius:0 8px 8px 0;margin:12px 0">
+  <p style="font-weight:700;color:#0f172a;margin:0 0 6px">${t.titulo}</p>
+  <p style="margin:0">Novo estado: <span style="background:${cor};color:#fff;padding:2px 12px;border-radius:20px;font-size:13px;font-weight:600">${lbl}</span></p>
+</div>
 <p style="color:#64748b">Alterado por: <strong>${CP?.nome||'Gestor'}</strong></p>
-<p><a href="https://ima-gestao.vercel.app/app.html" style="background:#185FA5;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:8px;font-weight:600">Ver no sistema →</a></p>`;
-    notificarEnvolvidos(t, assunto, corpo, CU.id);
+<p><a href="https://ima-gestao.vercel.app/app.html" style="background:#185FA5;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:4px;font-weight:600">Ver no sistema →</a></p>`;
+    notificarEnvolvidos(t, assunto, corpo);
   }
-  await loadAll();renderStats();renderTickets();await abrirTicket(id);
+  renderStats();renderTickets();await abrirTicket(id);
   toast(`Estado alterado para "${cap(estado).replace('-',' ')}"`, 'success');
 }
 
@@ -600,30 +613,51 @@ async function criarTicket(){
   await loadAll();renderStats();renderTickets();
   toast('Problema registado!','success');
   if(notif){
+    await loadAll();
+    const t=tickets[0];
     const resp=profiles.find(p=>p.id===resp_id);
     const pri=document.getElementById('n-pri').value;
-    const desc=document.getElementById('n-desc').value.trim();
-    if(resp?.email_notif){
-      const corPri=pri==='urgente'?'#dc2626':pri==='alto'?'#d97706':pri==='medio'?'#185FA5':'#16a34a';
-      const assunto=`[IMA] Novo problema atribuído a ti: ${titulo}`;
-      const corpo=`<p>Olá <strong>${resp.nome}</strong>,</p>
-<p>Foi-te atribuído um novo problema:</p>
+    const desc=document.getElementById('n-desc').value.trim()||'';
+    const corPri=pri==='urgente'?'#dc2626':pri==='alto'?'#d97706':pri==='medio'?'#185FA5':'#16a34a';
+    const emoji=pri==='urgente'?'🚨':pri==='alto'?'⚠️':pri==='medio'?'📋':'📝';
+    const assunto=`[IMA] ${emoji} Novo problema criado: ${titulo}`;
+    const corpo=`
+<p>Olá,</p>
+<p>Foi criado um novo problema no sistema IMA Lda:</p>
 <div style="background:#f8fafc;border-left:4px solid ${corPri};padding:14px 16px;border-radius:0 8px 8px 0;margin:12px 0">
   <p style="font-size:16px;font-weight:700;color:#0f172a;margin:0 0 6px">${titulo}</p>
-  ${desc?`<p style="color:#64748b;margin:0 0 8px">${desc}</p>`:''}
-  <p style="margin:0"><span style="background:${corPri};color:#fff;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600">${cap(pri)}</span></p>
+  ${desc?`<p style="color:#64748b;margin:0 0 10px">${desc}</p>`:''}
+  <p style="margin:0">Prioridade: <span style="background:${corPri};color:#fff;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600">${cap(pri)}</span></p>
+  ${resp?`<p style="margin:6px 0 0;color:#64748b;font-size:13px">Responsável: <strong>${resp.nome}</strong></p>`:''}
 </div>
-<p>Acede ao sistema para ver os detalhes e adicionar atualizações.</p>
+<p style="color:#64748b">Criado por: <strong>${CP?.nome||'Sistema'}</strong></p>
 <p><a href="https://ima-gestao.vercel.app/app.html" style="background:#185FA5;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:4px;font-weight:600">Ver no sistema →</a></p>`;
-      enviarEmail(resp.email_notif, assunto, corpo);
-    }
+    const emails=new Set();
+    if(resp?.email_notif) emails.add(resp.email_notif);
+    const gestor=profiles.find(p=>p.role==='gestor');
+    if(gestor?.email_notif) emails.add(gestor.email_notif);
+    if([...emails].length) enviarEmail([...emails], assunto, corpo);
   }
 }
 
 function renderAvisos(){
   const el=document.getElementById('av-list');
   if(!avisos.length){el.innerHTML='<div class="empty">Sem avisos ainda.</div>';return}
-  el.innerHTML=avisos.map(a=>`<div class="avc"><div class="avt">${a.titulo}</div><div class="avx">${a.texto}</div><div class="avm">Por ${a.autor?.nome||'?'} · ${fd(a.created_at)}</div></div>`).join('');
+  const isG=CP?.role==='gestor';
+  el.innerHTML=avisos.map(a=>`<div class="avc">
+    <div class="avt">${a.titulo}</div>
+    <div class="avx">${a.texto}</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+      <div class="avm">Por ${a.autor?.nome||'?'} · ${fd(a.created_at)}</div>
+      ${isG?`<button class="bs" style="font-size:11px;padding:3px 10px;color:#dc2626;border-color:#fecaca" onclick="apagarAviso(${a.id})">🗑 Apagar</button>`:''}
+    </div>
+  </div>`).join('');
+}
+async function apagarAviso(id){
+  if(!confirm('Apagar este aviso permanentemente?'))return;
+  const{error}=await SB.from('avisos').delete().eq('id',id);
+  if(error){toast('Erro ao apagar: '+error.message,'error');return;}
+  await loadAll();renderAvisos();toast('Aviso apagado.','success');
 }
 function openAviso(){document.getElementById('m-av').style.display='flex'}
 function closeAviso(){document.getElementById('m-av').style.display='none'}
@@ -636,12 +670,19 @@ async function criarAviso(){
   await SB.from('avisos').insert({titulo,texto,autor_id:CU.id});
   closeAviso();document.getElementById('av-tit').value='';document.getElementById('av-txt').value='';
   await loadAll();renderAvisos();toast('Aviso publicado!','success');
-  if(notif){
-    const dest=profiles.filter(p=>p.id!==CU.id&&p.email_notif).map(p=>p.email_notif);
-    if(dest.length){
-      const corpo=`<p><strong>Aviso da IMA Lda:</strong></p><h3 style="margin:8px 0">${titulo}</h3><p style="color:#64748b;line-height:1.6">${texto}</p><p><a href="https://ima-gestao.vercel.app/app.html" style="background:#185FA5;color:#fff;padding:8px 16px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:8px">Ver no sistema</a></p>`;
-      enviarEmail(dest,`[IMA] Aviso: ${titulo}`,corpo);
-    }
+  // Enviar email SEMPRE a toda a equipa incluindo o criador
+  const dest=profiles.filter(p=>p.email_notif).map(p=>p.email_notif);
+  if(dest.length){
+    const corpo=`
+<p>Olá,</p>
+<p>Foi publicado um novo aviso na IMA Lda:</p>
+<div style="background:#f8fafc;border-left:4px solid #185FA5;padding:16px;border-radius:0 8px 8px 0;margin:12px 0">
+  <p style="font-size:16px;font-weight:700;color:#0f172a;margin:0 0 8px">📢 ${titulo}</p>
+  <p style="color:#64748b;line-height:1.6;margin:0">${texto}</p>
+</div>
+<p style="color:#64748b;font-size:13px">Publicado por: <strong>${CP?.nome||'Gestor'}</strong></p>
+<p><a href="https://ima-gestao.vercel.app/app.html" style="background:#185FA5;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:4px;font-weight:600">Ver no sistema →</a></p>`;
+    enviarEmail(dest,`[IMA] 📢 Novo aviso: ${titulo}`,corpo);
   }
 }
 
@@ -680,11 +721,12 @@ function renderEq(){
   el.innerHTML=profiles.map((p,i)=>{
     const meus=tickets.filter(t=>t.responsavel_id===p.id);
     const dep=depts.find(d=>d.id===p.departamento_id);
+    const isGestor=p.role==='gestor';
     return`<div class="tkc">
       <div class="tkc-top">
         <div class="av-lg" style="${ac(i)}">${ini(p.nome)}</div>
         <div style="flex:1;min-width:0">
-          <div class="tn">${p.nome}</div>
+          <div class="tn">${p.nome} ${isGestor?'<span style="background:#dbeafe;color:#1e40af;font-size:10px;padding:1px 7px;border-radius:20px;font-weight:600">Gestor</span>':''}</div>
           <div class="tro">${p.cargo||''}</div>
           ${dep?`<span class="badge b-dep" style="font-size:10px;margin-top:4px;display:inline-block">${dep.nome}</span>`:''}
           ${p.email_notif?`<div style="font-size:11px;color:var(--t3);margin-top:4px">✉ ${p.email_notif}</div>`:''}
@@ -695,8 +737,20 @@ function renderEq(){
         <div class="tks-i"><div class="tsn" style="color:#185FA5">${meus.filter(t=>t.estado==='em-curso').length}</div><div class="tsl">Em curso</div></div>
         <div class="tks-i"><div class="tsn" style="color:#16a34a">${meus.filter(t=>t.estado==='resolvido'||t.estado==='fechado').length}</div><div class="tsl">Resolvidos</div></div>
       </div>
+      ${!isGestor?`<div style="margin-top:10px;border-top:1px solid var(--bor);padding-top:10px">
+        <button class="bs" style="width:100%;font-size:12px;padding:6px;color:#dc2626;border-color:#fecaca" onclick="eliminarColab('${p.id}','${p.nome}')">🗑 Eliminar colaborador</button>
+      </div>`:''}
     </div>`;
   }).join('');
+}
+
+async function eliminarColab(id,nome){
+  if(!confirm(`Tens a certeza que queres eliminar o colaborador "${nome}"?\n\nEsta ação desativa a conta permanentemente.`))return;
+  // Marcar como inativo no perfil
+  const{error}=await SB.from('profiles').update({ativo:false}).eq('id',id);
+  if(error){toast('Erro ao eliminar: '+error.message,'error');return;}
+  await loadAll();renderEq();
+  toast(`Colaborador ${nome} eliminado.`,'success');
 }
 
 function openColab(){
@@ -726,14 +780,18 @@ async function criarColab(){
 async function loadMsgs(){
   const{data}=await SB.from('mensagens_gerais').select('*,autor:profiles(id,nome)').order('created_at').limit(100);
   const el=document.getElementById('chat-msgs');if(!el)return;
+  const isG=CP?.role==='gestor';
   el.innerHTML=(data||[]).map(m=>{
     const ai=profiles.findIndex(p=>p.id===m.autor?.id);const me=m.autor?.id===CU.id;
-    return`<div class="cm${me?' cm-me':''}">
+    return`<div class="cm${me?' cm-me':''}" style="align-items:flex-end">
       ${!me?`<span class="av-sm" style="${ac(ai)}">${ini(m.autor?.nome||'?')}</span>`:''}
-      <div class="cb${me?' cb-me':''}">
-        ${!me?`<div class="ca">${m.autor?.nome||'?'}</div>`:''}
-        <div class="ct">${m.texto}</div>
-        <div class="ctime">${fd(m.created_at)}</div>
+      <div style="display:flex;flex-direction:column;${me?'align-items:flex-end':''}">
+        <div class="cb${me?' cb-me':''}">
+          ${!me?`<div class="ca">${m.autor?.nome||'?'}</div>`:''}
+          <div class="ct">${m.texto}</div>
+          <div class="ctime">${fd(m.created_at)}</div>
+        </div>
+        ${isG?`<button onclick="apagarMsgGeral(${m.id})" style="background:none;border:none;cursor:pointer;font-size:10px;color:var(--t3);padding:2px 4px;margin-top:2px" title="Apagar">🗑</button>`:''}
       </div>
     </div>`;
   }).join('');
@@ -743,6 +801,24 @@ async function sendMsg(){
   const inp=document.getElementById('chat-in');const txt=inp.value.trim();if(!txt)return;
   await SB.from('mensagens_gerais').insert({autor_id:CU.id,texto:txt});
   inp.value='';await loadMsgs();
+  // Notificar toda a equipa por email
+  const dest=profiles.filter(p=>p.email_notif).map(p=>p.email_notif);
+  if(dest.length){
+    const corpo=`
+<p>Olá,</p>
+<p><strong>${CP?.nome||'Utilizador'}</strong> enviou uma mensagem no canal da equipa:</p>
+<div style="background:#f8fafc;border-left:4px solid #185FA5;padding:14px 16px;border-radius:0 8px 8px 0;margin:12px 0">
+  <p style="color:#0f172a;margin:0;font-size:14px">"${txt}"</p>
+</div>
+<p><a href="https://ima-gestao.vercel.app/app.html" style="background:#185FA5;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:4px;font-weight:600">Ver no sistema →</a></p>`;
+    enviarEmail(dest,`[IMA] 💬 Nova mensagem de ${CP?.nome||'Utilizador'}`,corpo);
+  }
+}
+async function apagarMsgGeral(id){
+  if(!confirm('Apagar esta mensagem?'))return;
+  const{error}=await SB.from('mensagens_gerais').delete().eq('id',id);
+  if(error){toast('Erro ao apagar.','error');return;}
+  await loadMsgs();toast('Mensagem apagada.','success');
 }
 
 function showSec(n){

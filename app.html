@@ -528,8 +528,12 @@ async function abrirTicket(id){
     </div>
     <div class="dl" style="margin-bottom:6px">Mensagens & Atualizações</div>
     <div class="ml" id="msgs-tk"></div>
-    <div class="cir">
-      <input type="text" id="msg-in" placeholder="Adicionar atualização..." onkeydown="if(event.key==='Enter')sendMsgTk(${id})">
+    <div class="cir" style="flex-wrap:wrap;gap:6px">
+      <input type="text" id="msg-in" placeholder="Adicionar atualização..." onkeydown="if(event.key==='Enter')sendMsgTk(${id})" style="flex:1;min-width:180px">
+      <label style="cursor:pointer;padding:9px 12px;border:1.5px solid var(--bor);border-radius:var(--r);font-size:13px;color:var(--t2);white-space:nowrap;display:flex;align-items:center;gap:4px" title="Anexar ficheiro">
+        📎 <input type="file" id="msg-file" style="display:none" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" onchange="mostrarAnexo(this)">
+        <span id="file-label">Anexo</span>
+      </label>
       <button class="bp" onclick="sendMsgTk(${id})">Enviar</button>
     </div>`;
   document.getElementById('m-det').style.display='flex';
@@ -542,14 +546,41 @@ async function loadMsgsTk(id){
   if(!data||!data.length){el.innerHTML='<div style="font-size:13px;color:var(--t3);padding:8px 0">Sem atualizações ainda.</div>';return}
   el.innerHTML=data.map(m=>{
     const ai=profiles.findIndex(p=>p.id===m.autor?.id);
-    return`<div class="mi"><div class="mtop"><div class="av-row"><span class="av-sm" style="${ac(ai)}">${ini(m.autor?.nome||'?')}</span><span class="ma">${m.autor?.nome||'?'}</span></div><span class="md">${fd(m.created_at)}</span></div><div class="mt">${m.texto}</div></div>`;
+    const anexoHtml=m.anexo_url?`<div style="margin-top:6px"><a href="${m.anexo_url}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:5px 10px;font-size:12px;color:#185FA5;text-decoration:none">📎 ${m.anexo_nome||'Ficheiro'}</a></div>`:'';
+    return`<div class="mi"><div class="mtop"><div class="av-row"><span class="av-sm" style="${ac(ai)}">${ini(m.autor?.nome||'?')}</span><span class="ma">${m.autor?.nome||'?'}</span></div><span class="md">${fd(m.created_at)}</span></div><div class="mt">${m.texto}</div>${anexoHtml}</div>`;
   }).join('');
   el.scrollTop=el.scrollHeight;
 }
 
+function mostrarAnexo(inp){
+  const label=document.getElementById('file-label');
+  if(inp.files&&inp.files[0]){
+    const nome=inp.files[0].name;
+    label.textContent=nome.length>15?nome.slice(0,12)+'...':nome;
+    label.style.color='#185FA5';
+  } else {
+    label.textContent='Anexo';
+    label.style.color='';
+  }
+}
 async function sendMsgTk(id){
-  const inp=document.getElementById('msg-in');const txt=inp.value.trim();if(!txt)return;
-  await SB.from('mensagens_ticket').insert({ticket_id:id,autor_id:CU.id,texto:txt});
+  const inp=document.getElementById('msg-in');const txt=inp.value.trim();
+  const fileInp=document.getElementById('msg-file');
+  const file=fileInp?.files?.[0];
+  if(!txt&&!file){toast('Escreve uma mensagem ou anexa um ficheiro.','error');return;}
+  let anexo_url=null,anexo_nome=null;
+  if(file){
+    if(file.size>5*1024*1024){toast('Ficheiro demasiado grande. Máximo 5MB.','error');return;}
+    const ext=file.name.split('.').pop();
+    const path=`${CU.id}/${Date.now()}.${ext}`;
+    const{data,error}=await SB.storage.from('anexos').upload(path,file);
+    if(error){toast('Erro ao enviar ficheiro: '+error.message,'error');return;}
+    const{data:urlData}=SB.storage.from('anexos').getPublicUrl(path);
+    anexo_url=urlData.publicUrl;
+    anexo_nome=file.name;
+    if(fileInp)fileInp.value='';
+  }
+  await SB.from('mensagens_ticket').insert({ticket_id:id,autor_id:CU.id,texto:txt||'📎 Anexo',anexo_url,anexo_nome});
   inp.value='';await loadMsgsTk(id);
   const t=tickets.find(x=>x.id===id);
   if(!t)return;
@@ -627,14 +658,14 @@ async function notifManual(id){
 function openNovo(){
   document.getElementById('n-dep').innerHTML='<option value="">Sem departamento</option>'+depts.map(d=>`<option value="${d.id}">${d.nome}</option>`).join('');
   document.getElementById('n-resp').innerHTML=profiles.filter(p=>p.ativo!==false).map(p=>`<option value="${p.id}">${p.nome}${p.cargo?' — '+p.cargo:''}</option>`).join('');
-  document.getElementById('campo-resp').style.display=CP?.role==='gestor'?'block':'none';
+  document.getElementById('campo-resp').style.display='block';
   document.getElementById('m-novo').style.display='flex';
 }
 
 async function criarTicket(){
   const titulo=document.getElementById('n-tit').value.trim();
   if(!titulo){alert('Introduz o título do problema.');return}
-  const resp_id=CP?.role==='gestor'?document.getElementById('n-resp').value:CP.id;
+  const resp_id=document.getElementById('n-resp').value||CP.id;
   const dep_id=document.getElementById('n-dep').value||null;
   const notif=document.getElementById('notif-email').checked;
   const{error}=await SB.from('tickets').insert({titulo,descricao:document.getElementById('n-desc').value.trim()||null,prioridade:document.getElementById('n-pri').value,categoria:document.getElementById('n-cat').value,estado:'aberto',responsavel_id:resp_id,departamento_id:dep_id?parseInt(dep_id):null,criado_por:CU.id});

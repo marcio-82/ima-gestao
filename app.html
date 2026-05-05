@@ -53,6 +53,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .tc{background:#fff;border:1px solid var(--bor);border-radius:var(--rl);padding:14px 16px;cursor:pointer;transition:all .15s;margin-bottom:8px}
 .tc:hover{border-color:var(--blue);box-shadow:0 2px 10px rgba(24,95,165,.08)}
 .tc-urg{border-left:3px solid #dc2626}
+.unread-dot{width:8px;height:8px;background:#ef4444;border-radius:50%;display:inline-block;flex-shrink:0;animation:pulse 2s infinite}
+.unread-badge{background:#ef4444;color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:4px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 .tc-alto{border-left:3px solid #d97706}
 .tt{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 .ti{flex:1;min-width:0}
@@ -368,6 +371,13 @@ const EMAIL_FN='https://wvmprizthrcxmvkkoiyu.supabase.co/functions/v1/dynamic-re
 
 let CU=null,CP=null,profiles=[],tickets=[],depts=[],avisos=[];
 let filter='todos',detId=null,editDepId=null;
+let msgCounts={}; // {ticketId: {total, lastSeen}}
+
+function getReadKey(){return CU?`ima_seen_${CU.id}`:'ima_seen';}
+function getSeen(){try{return JSON.parse(localStorage.getItem(getReadKey())||'{}');}catch{return {};}}
+function setSeen(ticketId,count){const s=getSeen();s[ticketId]=count;localStorage.setItem(getReadKey(),JSON.stringify(s));}
+function getUnreadCount(ticketId,total){const s=getSeen();const seen=s[ticketId]||0;return Math.max(0,total-seen);}
+function markTicketRead(ticketId,count){setSeen(ticketId,count);}
 const AVC=['#dbeafe|#1e40af','#dcfce7|#166534','#fef2f2|#991b1b','#ede9fe|#5b21b6','#fef3c7|#92400e'];
 function ac(i){const c=AVC[((i||0)%AVC.length+AVC.length)%AVC.length].split('|');return`background:${c[0]};color:${c[1]}`}
 function ini(n){if(!n)return'??';const p=n.trim().split(' ');return p.length>=2?(p[0][0]+p[p.length-1][0]).toUpperCase():n.slice(0,2).toUpperCase()}
@@ -440,14 +450,35 @@ async function loadAll(){
     SB.from('avisos').select('*,autor:profiles(id,nome)').order('created_at',{ascending:false})
   ]);
   profiles=pr||[];tickets=tk||[];depts=dp||[];avisos=av||[];
+  // Carregar contagens de mensagens para badges de não lido
+  await loadMsgCounts();
   const ab=tickets.filter(t=>t.estado==='aberto'||t.estado==='em-curso').length;
   const nb=document.getElementById('nbadge');nb.textContent=ab||'';nb.style.display=ab>0?'inline-flex':'none';
+}
+
+async function loadMsgCounts(){
+  // Buscar contagem de mensagens por ticket
+  const ids=tickets.map(t=>t.id);
+  if(!ids.length)return;
+  const{data}=await SB.from('mensagens_ticket').select('ticket_id').in('ticket_id',ids);
+  if(!data)return;
+  msgCounts={};
+  data.forEach(m=>{msgCounts[m.ticket_id]=(msgCounts[m.ticket_id]||0)+1;});
 }
 
 function subscribe(){
   SB.channel('tk').on('postgres_changes',{event:'*',schema:'public',table:'tickets'},async()=>{await loadAll();renderStats();renderTickets();}).subscribe();
   SB.channel('mg').on('postgres_changes',{event:'INSERT',schema:'public',table:'mensagens_gerais'},()=>{if(document.getElementById('sec-mensagens').classList.contains('active'))loadMsgs();}).subscribe();
-  SB.channel('mt').on('postgres_changes',{event:'INSERT',schema:'public',table:'mensagens_ticket'},(pl)=>{if(detId&&pl.new.ticket_id==detId)loadMsgsTk(detId);}).subscribe();
+  SB.channel('mt').on('postgres_changes',{event:'INSERT',schema:'public',table:'mensagens_ticket'},async(pl)=>{
+    // Atualizar contagem de mensagens não lidas
+    const tid=pl.new.ticket_id;
+    msgCounts[tid]=(msgCounts[tid]||0)+1;
+    // Se não sou eu que enviei, fica como não lido
+    if(pl.new.autor_id!==CU.id){
+      renderTickets(); // mostra badge
+    }
+    if(detId&&tid==detId)loadMsgsTk(detId);
+  }).subscribe();
   SB.channel('av').on('postgres_changes',{event:'INSERT',schema:'public',table:'avisos'},async()=>{await loadAll();if(document.getElementById('sec-avisos').classList.contains('active'))renderAvisos();}).subscribe();
 }
 
@@ -480,10 +511,15 @@ function renderTickets(){
   el.innerHTML=list.map(t=>{
     const r=t.responsavel;const ri=profiles.findIndex(p=>p.id===r?.id);
     const cls=t.prioridade==='urgente'?' tc-urg':t.prioridade==='alto'?' tc-alto':'';
+    const totalMsgs=msgCounts[t.id]||0;
+    const unread=getUnreadCount(t.id,totalMsgs);
     return`<div class="tc${cls}" onclick="abrirTicket(${t.id})">
       <div class="tt">
         <div class="ti">
-          <div class="tit">${t.titulo}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+            <div class="tit" style="margin-bottom:0">${t.titulo}</div>
+            ${unread>0?`<span class="unread-badge" title="${unread} mensagem${unread>1?'s':''} nova${unread>1?'s':''}">${unread} 🔔</span>`:''}
+          </div>
           <div class="tdesc">${t.descricao||'Sem descrição.'}</div>
           <div class="tmeta">
             <span class="badge b-${t.prioridade}">${cap(t.prioridade)}</span>
@@ -501,6 +537,9 @@ function renderTickets(){
 
 async function abrirTicket(id){
   detId=id;const t=tickets.find(x=>x.id===id);if(!t)return;
+  // Marcar como lido ao abrir
+  const total=msgCounts[id]||0;
+  markTicketRead(id,total);
   const r=t.responsavel;const ri=profiles.findIndex(p=>p.id===r?.id);
   const isG=CP?.role==='gestor';
   const respOptions=profiles.filter(p=>p.ativo!==false).map(p=>`<option value="${p.id}"${p.id===t.responsavel_id?' selected':''}>${p.nome}${p.cargo?' — '+p.cargo:''}</option>`).join('');
@@ -581,7 +620,12 @@ async function sendMsgTk(id){
     if(fileInp)fileInp.value='';
   }
   await SB.from('mensagens_ticket').insert({ticket_id:id,autor_id:CU.id,texto:txt||'📎 Anexo',anexo_url,anexo_nome});
-  inp.value='';await loadMsgsTk(id);
+  inp.value='';
+  // Atualizar contagem e marcar como lido para quem enviou
+  msgCounts[id]=(msgCounts[id]||0)+1;
+  markTicketRead(id,msgCounts[id]);
+  await loadMsgsTk(id);
+  renderTickets(); // atualiza badges
   const t=tickets.find(x=>x.id===id);
   if(!t)return;
   const assunto=`[IMA] 💬 Novo comentário: ${t.titulo}`;
